@@ -27,9 +27,13 @@ ls "$INC/usr/share/themes" || true
 
 echo "==> papirus-folders (carpetas rojas)"
 if [ ! -x "$INC/usr/local/bin/papirus-folders" ]; then
-    curl -fsSL -o "$INC/usr/local/bin/papirus-folders" \
-        https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-folders/master/papirus-folders && \
-    chmod +x "$INC/usr/local/bin/papirus-folders" || echo "AVISO: no se pudo descargar papirus-folders"
+    tmp=$(mktemp -d)
+    if git clone --depth 1 https://github.com/PapirusDevelopmentTeam/papirus-folders.git "$tmp/pf"; then
+        install -Dm755 "$tmp/pf/papirus-folders" "$INC/usr/local/bin/papirus-folders"
+    else
+        echo "AVISO: no se pudo descargar papirus-folders"
+    fi
+    rm -rf "$tmp"
 fi
 
 echo "==> Configurando live-build"
@@ -37,15 +41,16 @@ lb clean --purge >/dev/null 2>&1 || true
 lb config
 
 echo "==> Menu de arranque de la USB (GRUB EFI + ISOLINUX) con la estetica Crack OS"
+ls -la /usr/share/live/build/bootloaders/ /usr/share/live/build/bootloaders/grub-pc /usr/share/live/build/bootloaders/isolinux || true
 OV=config/bootloaders-overlay
 for bl in grub-pc isolinux; do
     rm -rf "config/bootloaders/$bl"
     mkdir -p config/bootloaders
-    cp -r "/usr/share/live/build/bootloaders/$bl" "config/bootloaders/$bl"
+    cp -rL "/usr/share/live/build/bootloaders/$bl" "config/bootloaders/$bl"
 done
 # GRUB (UEFI)
 G=config/bootloaders/grub-pc
-cp "$OV/splash-grub.png" "$G/splash.png"
+rm -f "$G/splash.png"; cp "$OV/splash-grub.png" "$G/splash.png"
 cat >> "$G/theme.cfg" <<'GRUBTHEME'
 
 # --- Crack OS ---
@@ -56,7 +61,7 @@ set menu_color_highlight=white/red
 GRUBTHEME
 # ISOLINUX (BIOS)
 I=config/bootloaders/isolinux
-rm -f "$I/splash.svg.in" "$I/splash.svg"
+rm -f "$I/splash.svg.in" "$I/splash.svg" "$I/splash.png"
 cp "$OV/splash-isolinux.png" "$I/splash.png"
 if [ -f "$I/stdmenu.cfg" ]; then
     sed -i -e 's/^menu color title.*/menu color title\t* #ffffffff #00000000 none/' \
