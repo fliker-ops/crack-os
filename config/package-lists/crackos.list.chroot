@@ -95,7 +95,8 @@ blueman
 cups
 system-config-printer
 policykit-1-gnome
-xfce4-screensaver
+xscreensaver
+xscreensaver-data
 
 # ===== Aplicaciones =====
 firefox-esr
