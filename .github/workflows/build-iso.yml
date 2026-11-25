@@ -8,6 +8,9 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+
 concurrency:
   group: build-iso-${{ github.ref }}
   cancel-in-progress: true
@@ -48,6 +51,22 @@ jobs:
             crack-os-1.0-amd64.iso.sha256
           compression-level: 0
           retention-days: 30
+
+      - name: Probar arranque en QEMU y guardar capturas
+        continue-on-error: true
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 ovmf socat imagemagick >/dev/null
+          sudo chmod 666 /dev/kvm || true
+          tests/qemu-screens.sh crack-os-1.0-amd64.iso
+          git config user.name "crackos-ci"
+          git config user.email "crackos-ci@users.noreply.github.com"
+          tmp=$(mktemp -d); cp -r screens "$tmp/"
+          git checkout --orphan capturas
+          git rm -rfq . >/dev/null
+          cp -r "$tmp/screens" . && git add screens
+          git commit -qm "Capturas de arranque de ${GITHUB_SHA::7}"
+          git push -f origin capturas
 
       - name: Adjuntar ISO al release
         if: github.event_name == 'release'
