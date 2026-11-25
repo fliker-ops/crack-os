@@ -38,7 +38,7 @@ title.SetOpacity(0);
 sub_img = Image("subtitle.png");
 sub = Sprite(sub_img);
 sub.SetX(cx - sub_img.GetWidth() / 2);
-sub.SetY(title.GetY() + title_img.GetHeight() - 22);
+sub.SetY(title.GetY() + title_img.GetHeight() - 40);
 sub.SetZ(10);
 sub.SetOpacity(0);
 
