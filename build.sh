@@ -41,39 +41,75 @@ lb clean --purge >/dev/null 2>&1 || true
 lb config
 
 echo "==> Menu de arranque de la USB (GRUB EFI + ISOLINUX) con la estetica Crack OS"
-ls -la /usr/share/live/build/bootloaders/ /usr/share/live/build/bootloaders/grub-pc /usr/share/live/build/bootloaders/isolinux || true
+cat /usr/share/live/build/bootloaders/grub-pc/theme.cfg /usr/share/live/build/bootloaders/grub-pc/live-theme/theme.txt 2>/dev/null | head -60 || true
 OV=config/bootloaders-overlay
-for bl in grub-pc isolinux; do
+SRC=/usr/share/live/build/bootloaders
+mkdir -p config/bootloaders
+for bl in grub-pc syslinux_common; do
     rm -rf "config/bootloaders/$bl"
-    mkdir -p config/bootloaders
-    cp -rL "/usr/share/live/build/bootloaders/$bl" "config/bootloaders/$bl"
+    cp -rL "$SRC/$bl" "config/bootloaders/$bl" || cp -r "$SRC/$bl" "config/bootloaders/$bl"
 done
-# GRUB (UEFI)
+# GRUB (UEFI): fondo + tema propio
 G=config/bootloaders/grub-pc
 rm -f "$G/splash.png"; cp "$OV/splash-grub.png" "$G/splash.png"
-cat >> "$G/theme.cfg" <<'GRUBTHEME'
+mkdir -p "$G/live-theme"
+cat > "$G/live-theme/theme.txt" <<'GRUBTHEME'
+desktop-image: "../splash.png"
+title-text: ""
+message-color: "#e6e6e6"
+terminal-box: "terminal_box_*.png"
++ boot_menu {
+    left = 30%
+    width = 40%
+    top = 52%
+    height = 34%
+    item_color = "#a0a0a0"
+    selected_item_color = "#ffffff"
+    item_height = 32
+    item_padding = 10
+    item_spacing = 6
+    selected_item_pixmap_style = "select_*.png"
+    scrollbar = false
+}
++ progress_bar {
+    id = "__timeout__"
+    left = 30%
+    width = 40%
+    top = 90%
+    height = 4
+    show_text = false
+    fg_color = "#ff2832"
+    bg_color = "#3c080c"
+    border_color = "#3c080c"
+}
+GRUBTHEME
+cp config/includes.chroot/boot/grub/themes/crackos/select_*.png "$G/live-theme/" || true
+cp config/includes.chroot/boot/grub/themes/crackos/terminal_box_*.png "$G/live-theme/" || true
+cat >> "$G/theme.cfg" <<'GRUBCOLORS'
 
 # --- Crack OS ---
 set color_normal=light-gray/black
 set color_highlight=white/red
 set menu_color_normal=light-gray/black
 set menu_color_highlight=white/red
-GRUBTHEME
-# ISOLINUX (BIOS)
-I=config/bootloaders/isolinux
-rm -f "$I/splash.svg.in" "$I/splash.svg" "$I/splash.png"
-cp "$OV/splash-isolinux.png" "$I/splash.png"
-if [ -f "$I/stdmenu.cfg" ]; then
+GRUBCOLORS
+# ISOLINUX/SYSLINUX (BIOS)
+S=config/bootloaders/syslinux_common
+rm -f "$S/splash.svg.in" "$S/splash.svg" "$S/splash.png"
+cp "$OV/splash-isolinux.png" "$S/splash.png"
+if [ -f "$S/stdmenu.cfg" ]; then
     sed -i -e 's/^menu color title.*/menu color title\t* #ffffffff #00000000 none/' \
            -e 's/^menu color sel.*/menu color sel\t* #ffffffff #c0ff2832 none/' \
            -e 's/^menu color unsel.*/menu color unsel\t* #ffbdbdbd #00000000 none/' \
            -e 's/^menu color hotsel.*/menu color hotsel\t1;7;37;40 #ffffffff #c0ff2832 none/' \
-           -e 's/^menu color tabmsg.*/menu color tabmsg\t* #ff9a9a9a #00000000 none/' "$I/stdmenu.cfg"
+           -e 's/^menu color tabmsg.*/menu color tabmsg\t* #ff9a9a9a #00000000 none/' "$S/stdmenu.cfg"
 fi
 # Nombres de las entradas
-grep -rl "Live system" config/bootloaders 2>/dev/null | xargs -r sed -i \
-    -e 's/Live system (fail-safe mode)/Crack OS Live (modo compatibilidad)/g' \
-    -e 's/Live system/Crack OS Live (nada se guarda)/g'
+for f in $(grep -rl "Live system" config/bootloaders 2>/dev/null || true); do
+    sed -i -e 's/Live system (fail-safe mode)/Crack OS Live (modo compatibilidad)/g' \
+           -e 's/Live system/Crack OS Live (nada se guarda)/g' "$f"
+done
+find config/bootloaders -maxdepth 2 | sort
 
 echo "==> Compilando (esto tarda)"
 lb build 2>&1 | tee build.log
