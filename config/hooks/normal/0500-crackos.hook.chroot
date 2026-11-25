@@ -124,6 +124,20 @@ for d in /usr/share/applications/*calamares*.desktop /usr/share/applications/ins
 done
 mkdir -p /etc/skel/Desktop
 
+# ---- Quitar KDE Plasma (lo arrastran recomendaciones de SDDM); Crack OS usa XFCE ----
+KDE=$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'plasma-*' 'kwin-*' 'kde-config-*' 'kdeconnect' \
+      'sddm-theme-breeze' 'sddm-theme-debian-breeze' 'systemsettings' 'kscreen' 'powerdevil*' 'khotkeys*' \
+      'kinfocenter' 'polkit-kde-agent-1' 'milou' 'kmenuedit' 'ksystemstats' 'drkonqi' 2>/dev/null | awk '$1 ~ /^ii/ {print $2}')
+if [ -n "$KDE" ]; then
+    echo "[crackos] quitando: $KDE"
+    apt-get purge -y $KDE
+    apt-get autoremove --purge -y
+fi
+for p in sddm xfce4 xfce4-panel calamares firefox-esr plymouth; do
+    dpkg -s "$p" >/dev/null 2>&1 || { echo "[crackos] ERROR: falta $p"; exit 1; }
+done
+rm -f /usr/share/wayland-sessions/plasma*.desktop /usr/share/xsessions/plasma*.desktop
+
 # ---- Limpieza ----
 rm -f /etc/skel/.config/crackos/.wallpaper-set
 echo "[crackos] listo"

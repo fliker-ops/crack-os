@@ -108,11 +108,6 @@ if [ -f "$S/stdmenu.cfg" ]; then
            -e 's/^menu color hotsel.*/menu color hotsel\t1;7;37;40 #ffffffff #c0ff2832 none/' \
            -e 's/^menu color tabmsg.*/menu color tabmsg\t* #ff9a9a9a #00000000 none/' "$S/stdmenu.cfg"
 fi
-# Nombres de las entradas
-for f in $(grep -rl "Live system" config/bootloaders 2>/dev/null || true); do
-    sed -i -e 's/Live system (fail-safe mode)/Crack OS Live (modo compatibilidad)/g' \
-           -e 's/Live system/Crack OS Live (nada se guarda)/g' "$f"
-done
 find config/bootloaders -maxdepth 2 | sort
 
 echo "==> Compilando (esto tarda)"

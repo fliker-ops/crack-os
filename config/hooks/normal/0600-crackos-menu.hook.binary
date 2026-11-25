@@ -1,0 +1,13 @@
+#!/bin/sh
+# Crack OS: nombres del menu de arranque de la USB (se ejecuta en la etapa binary)
+set -e
+for f in boot/grub/*.cfg isolinux/*.cfg; do
+    [ -f "$f" ] || continue
+    sed -i -e 's/Live system (\([a-z0-9-]*\) fail-safe mode)/Crack OS  \/\/  Modo compatibilidad/g' \
+           -e 's/Live system (\([a-z0-9-]*\))/Crack OS  \/\/  Live (nada se guarda)/g' \
+           -e 's/Live system/Crack OS Live/g' \
+           -e 's/Utilities\.\.\./Utilidades.../g' -e 's/"Utilities"/"Utilidades"/g' \
+           -e 's/menu title Boot menu/menu title Menu de arranque/' \
+           -e 's/Hardware Detection Tool (HDT)/Deteccion de hardware (HDT)/' "$f"
+done
+grep -h "menuentry\|menu label" boot/grub/*.cfg isolinux/*.cfg 2>/dev/null | head -20 || true
