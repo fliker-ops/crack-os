@@ -1,0 +1,126 @@
+#!/bin/sh
+# Crack OS: personalizacion dentro del sistema (se ejecuta durante la compilacion)
+set -e
+echo "[crackos] aplicando personalizacion"
+
+# ---- Identidad del sistema (sin cambiar ID=debian para no romper apt) ----
+if [ ! -L /etc/os-release ] || [ "$(readlink -f /etc/os-release)" = /usr/lib/os-release ]; then
+    dpkg-divert --quiet --local --rename --add /usr/lib/os-release || true
+    cat > /usr/lib/os-release <<'OSR'
+PRETTY_NAME="Crack OS 1.0"
+NAME="Crack OS"
+VERSION_ID="1.0"
+VERSION="1.0 (base Debian 12 bookworm)"
+VERSION_CODENAME=bookworm
+ID=debian
+HOME_URL="https://github.com/fliker-ops/crack-os"
+SUPPORT_URL="https://github.com/fliker-ops/crack-os/issues"
+BUG_REPORT_URL="https://github.com/fliker-ops/crack-os/issues"
+LOGO=crackos
+OSR
+    ln -sf ../usr/lib/os-release /etc/os-release
+fi
+printf 'Crack OS 1.0 \\n \\l\n\n' > /etc/issue
+echo "Crack OS 1.0" > /etc/issue.net
+cat > /etc/motd <<'MOTD'
+
+  CRACK OS  //  secure · stealth · system
+  Modo seguro: elige "Modo Seguro" en el menu de arranque.
+  Llave USB:   sudo crackos-usbkey
+
+MOTD
+
+# ---- Fuentes ----
+fc-cache -f >/dev/null 2>&1 || true
+
+# ---- Tema GTK / iconos ----
+if [ -d /usr/share/themes/Matcha-dark-aliz ]; then
+    THEME=Matcha-dark-aliz
+else
+    echo "[crackos] AVISO: Matcha-dark-aliz no encontrado, usando Adwaita-dark"
+    THEME=Adwaita-dark
+    sed -i "s/Matcha-dark-aliz/Adwaita-dark/g" \
+        /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/*.xml
+    sed -i "s/value=\"Adwaita-dark\"\/>/value=\"Default\"\/>/" \
+        /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml || true
+fi
+# carpetas de Papirus en rojo
+if [ -x /usr/local/bin/papirus-folders ] && [ -d /usr/share/icons/Papirus-Dark ]; then
+    /usr/local/bin/papirus-folders -C red --theme Papirus-Dark || true
+fi
+# valores por defecto para todo el sistema (tambien root y usuarios nuevos)
+mkdir -p /etc/gtk-3.0
+cat > /etc/gtk-3.0/settings.ini <<GTK
+[Settings]
+gtk-theme-name=$THEME
+gtk-icon-theme-name=Papirus-Dark
+gtk-font-name=JetBrainsMono Nerd Font 10
+gtk-application-prefer-dark-theme=1
+GTK
+gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
+
+# ---- GRUB: nombre "Crack OS" en el menu sin cambiar el id EFI "debian" ----
+# (el GRUB firmado para Secure Boot busca su configuracion en /EFI/debian)
+if [ -f /etc/grub.d/10_linux ] && ! dpkg-divert --list /etc/grub.d/10_linux | grep -q crackos; then
+    mkdir -p /usr/share/crackos/grub
+    dpkg-divert --quiet --local --rename --divert /usr/share/crackos/grub/10_linux.debian --add /etc/grub.d/10_linux
+    cat > /etc/grub.d/10_linux <<'G10'
+#!/bin/sh
+# Crack OS: muestra "Crack OS" en el menu de GRUB
+GRUB_DISTRIBUTOR="Crack OS"
+export GRUB_DISTRIBUTOR
+exec /usr/share/crackos/grub/10_linux.debian "$@"
+G10
+    chmod +x /etc/grub.d/10_linux
+fi
+for f in /etc/calamares/modules/bootloader.conf; do
+    [ -f "$f" ] && sed -i 's/^efiBootloaderId:.*/efiBootloaderId: "debian"/' "$f"
+done
+
+# ---- Plymouth ----
+plymouth-set-default-theme crackos
+mkdir -p /etc/plymouth
+printf '[Daemon]\nTheme=crackos\nShowDelay=0\nDeviceTimeout=8\n' > /etc/plymouth/plymouthd.conf
+grep -q '^FRAMEBUFFER=y' /etc/initramfs-tools/conf.d/splash 2>/dev/null || \
+    echo 'FRAMEBUFFER=y' > /etc/initramfs-tools/conf.d/splash
+
+# ---- GRUB: fuentes del tema ----
+F=/usr/share/fonts/truetype/crackos
+T=/boot/grub/themes/crackos
+if command -v grub-mkfont >/dev/null; then
+    grub-mkfont -n "JetBrains Mono Regular 14" -s 14 -o $T/jbm-regular-14.pf2 $F/JetBrainsMonoNerdFontMono-Regular.ttf
+    grub-mkfont -n "JetBrains Mono Regular 16" -s 16 -o $T/jbm-regular-16.pf2 $F/JetBrainsMonoNerdFontMono-Regular.ttf
+    grub-mkfont -n "JetBrains Mono Regular 18" -s 18 -o $T/jbm-regular-18.pf2 $F/JetBrainsMonoNerdFontMono-Regular.ttf
+    grub-mkfont -n "JetBrains Mono Bold 18" -s 18 -o $T/jbm-bold-18.pf2 $F/JetBrainsMonoNerdFont-Bold.ttf
+fi
+
+# ---- SDDM ----
+mkdir -p /usr/share/sddm/faces
+cp /usr/share/crackos/face.png /usr/share/sddm/faces/.face.icon
+rm -f /usr/share/sddm/themes/crackos/theme.conf.user
+echo "/usr/bin/sddm" > /etc/X11/default-display-manager
+# avatar por defecto para usuarios nuevos
+cp /usr/share/crackos/face.png /etc/skel/.face
+ln -sf .face /etc/skel/.face.icon
+if [ -d /var/lib/AccountsService ]; then mkdir -p /var/lib/AccountsService/icons; fi
+
+# ---- Root con la misma terminal ----
+cp /etc/skel/.bashrc /root/.bashrc
+
+# ---- Instalador Calamares ----
+if [ -f /etc/calamares/settings.conf ]; then
+    sed -i 's/^branding:.*/branding: crackos/' /etc/calamares/settings.conf
+fi
+for f in /etc/calamares/modules/plymouthcfg.conf; do
+    [ -f "$f" ] && sed -i 's/^plymouth_theme:.*/plymouth_theme: crackos/' "$f"
+done
+for d in /usr/share/applications/*calamares*.desktop /usr/share/applications/install-debian.desktop; do
+    [ -f "$d" ] || continue
+    sed -i -e 's/^Name=.*/Name=Instalar Crack OS/' -e 's/^Name\[.*//' \
+           -e 's/^GenericName=.*/GenericName=Instalador de Crack OS/' -e 's/^Icon=.*/Icon=crackos/' "$d"
+done
+mkdir -p /etc/skel/Desktop
+
+# ---- Limpieza ----
+rm -f /etc/skel/.config/crackos/.wallpaper-set
+echo "[crackos] listo"

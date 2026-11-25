@@ -1,0 +1,62 @@
+#!/bin/sh
+# Crack OS: exige una llave USB para el modo normal (desactivado por defecto).
+# Se configura con:  sudo crackos-usbkey create|enable|disable|status
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+. /scripts/functions
+
+grep -qw "boot=live" /proc/cmdline && exit 0
+grep -qw "crack.safe=1" /proc/cmdline && exit 0
+CONF="${rootmnt}/etc/crackos/usbkey.conf"
+[ -f "$CONF" ] || exit 0
+ENABLED=0; KEY_HASH=""; TIMEOUT=60; FALLBACK=safe
+. "$CONF"
+[ "$ENABLED" = "1" ] && [ -n "$KEY_HASH" ] || exit 0
+
+say() {
+    if command -v plymouth >/dev/null && plymouth --ping 2>/dev/null; then
+        plymouth display-message --text="$1"
+    else
+        echo "$1"
+    fi
+}
+
+for m in usb_storage uas sd_mod vfat exfat ext4 nls_cp437 nls_iso8859_1 nls_utf8; do
+    modprobe -q "$m" 2>/dev/null
+done
+mkdir -p /run/crackkey
+i=0
+say "INSERTA TU LLAVE USB DE CRACK OS"
+while [ "$i" -lt "$TIMEOUT" ]; do
+    for dev in /dev/sd[a-z][0-9]* /dev/sd[a-z]; do
+        [ -b "$dev" ] || continue
+        mount -o ro "$dev" /run/crackkey 2>/dev/null || continue
+        if [ -f /run/crackkey/.crackos.key ]; then
+            h=$(sha256sum /run/crackkey/.crackos.key | cut -d' ' -f1)
+            umount /run/crackkey
+            if [ "$h" = "$KEY_HASH" ]; then
+                say "LLAVE VERIFICADA · ACCESO CONCEDIDO"
+                sleep 1
+                say ""
+                exit 0
+            fi
+            say "LLAVE INCORRECTA"
+        else
+            umount /run/crackkey
+        fi
+    done
+    sleep 1
+    i=$((i + 1))
+    [ $((i % 10)) -eq 0 ] && say "INSERTA TU LLAVE USB DE CRACK OS ($((TIMEOUT - i)) s)"
+done
+
+if [ "$FALLBACK" = "poweroff" ]; then
+    say "LLAVE NO DETECTADA · APAGANDO"
+    sleep 3
+    poweroff -f
+fi
+say "LLAVE NO DETECTADA · INICIANDO EN MODO SEGURO"
+sleep 2
+touch /run/crackos-force-safe
+exit 0

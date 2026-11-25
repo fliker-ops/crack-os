@@ -1,0 +1,20 @@
+# salidas de live-build
+.build/
+cache/
+chroot/
+binary/
+local/
+*.iso
+*.iso.sha256
+*.iso.part*
+build.log
+binary.*
+chroot.*
+config/binary
+config/bootstrap
+config/chroot
+config/common
+config/source
+config/build
+config/bootloaders/
+__pycache__/

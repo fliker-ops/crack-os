@@ -1,0 +1,40 @@
+# ===== Crack OS: terminal personalizada =====
+case $- in *i*) ;; *) return ;; esac
+
+HISTCONTROL=ignoreboth
+HISTSIZE=5000
+HISTFILESIZE=10000
+shopt -s histappend checkwinsize
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+[ -f /usr/share/bash-completion/bash_completion ] && . /usr/share/bash-completion/bash_completion
+
+alias ls='ls --color=auto --group-directories-first'
+alias ll='ls -lh'
+alias la='ls -lAh'
+alias grep='grep --color=auto'
+alias ..='cd ..'
+alias update='sudo apt update && sudo apt full-upgrade'
+alias fetch='neofetch'
+alias safe-status='[ -f /etc/crackos/safe-mode-active ] && echo "MODO SEGURO: los cambios se borran al reiniciar" || echo "Modo normal"'
+export LS_COLORS='di=1;31:ln=36:ex=1;32:*.sh=1;32:*.deb=33:*.iso=33:*.zip=33:*.tar=33:*.gz=33'
+export LESS_TERMCAP_md=$'\e[1;31m' LESS_TERMCAP_me=$'\e[0m' LESS_TERMCAP_us=$'\e[4;37m' LESS_TERMCAP_ue=$'\e[0m'
+
+__crack_prompt() {
+    local code=$?
+    local R='\[\e[38;2;255;40;50m\]' D='\[\e[38;2;110;110;115m\]' W='\[\e[1;97m\]' G='\[\e[38;2;79;209;107m\]' N='\[\e[0m\]'
+    local mark="${G}"; [ $code -ne 0 ] && mark="${R}✘ $code "
+    local safe=""; [ -f /etc/crackos/safe-mode-active ] && safe="${R}[MODO SEGURO]${D}─"
+    local who="${W}\u${R}@${W}\h"; [ "$EUID" -eq 0 ] && who="${R}\u${D}@${W}\h"
+    local git=""
+    if command -v git >/dev/null; then
+        local b; b=$(git symbolic-ref --short HEAD 2>/dev/null) && git="${D}─[${R} ${W}${b}${D}]"
+    fi
+    PS1="\n${D}┌──${safe}[${who}${D}]─[${R} ${W}\w${D}]${git}\n${D}└─${mark}${R}❯${N} "
+}
+PROMPT_COMMAND=__crack_prompt
+
+# Bienvenida
+if [ -z "$CRACK_FETCH_SHOWN" ] && command -v neofetch >/dev/null; then
+    export CRACK_FETCH_SHOWN=1
+    neofetch
+fi

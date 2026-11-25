@@ -1,0 +1,148 @@
+// Crack OS - animacion de arranque (Plymouth script)
+INTRO = 40;   // cuadros de aparicion de la calavera
+LOOP = 23;    // cuadros del brillo de los ojos (ida y vuelta)
+GLITCH = 21;  // cuadros de glitch
+
+Window.SetBackgroundTopColor(0, 0, 0);
+Window.SetBackgroundBottomColor(0, 0, 0);
+
+fun pad3(n) {
+    if (n < 10) return "00" + n;
+    if (n < 100) return "0" + n;
+    return "" + n;
+}
+
+TOTAL = INTRO + LOOP + GLITCH;
+for (i = 0; i < TOTAL; i++)
+    frames[i] = Image("skull-" + pad3(i) + ".png");
+
+sw = Window.GetWidth();
+sh = Window.GetHeight();
+cx = Window.GetX() + sw / 2;
+top = Window.GetY() + sh * 0.5 - frames[0].GetHeight() * 0.72;
+
+skull = Sprite(frames[0]);
+skull.SetX(cx - frames[0].GetWidth() / 2);
+skull.SetY(top);
+skull.SetZ(10);
+
+title_img = Image("title.png");
+glitch_img[0] = Image("title-glitch0.png");
+glitch_img[1] = Image("title-glitch1.png");
+title = Sprite(title_img);
+title.SetX(cx - title_img.GetWidth() / 2);
+title.SetY(top + frames[0].GetHeight() - 10);
+title.SetZ(10);
+title.SetOpacity(0);
+
+sub_img = Image("subtitle.png");
+sub = Sprite(sub_img);
+sub.SetX(cx - sub_img.GetWidth() / 2);
+sub.SetY(title.GetY() + title_img.GetHeight() - 22);
+sub.SetZ(10);
+sub.SetOpacity(0);
+
+bar_bg_img = Image("bar-bg.png");
+bar_bg = Sprite(bar_bg_img);
+bar_bg.SetX(cx - bar_bg_img.GetWidth() / 2);
+bar_bg.SetY(sub.GetY() + sub_img.GetHeight() + 26);
+bar_bg.SetZ(10);
+bar_bg.SetOpacity(0);
+bar_full = Image("bar.png");
+bar = Sprite();
+bar.SetX(bar_bg.GetX());
+bar.SetY(bar_bg.GetY());
+bar.SetZ(11);
+
+// ---- animacion ----
+tick = 0;
+frame = 0;
+dir = 1;
+glitching = -1;
+progress = 0;
+
+fun refresh_cb() {
+    global.tick++;
+    if (global.tick % 2 != 0) return;          // ~25 fps
+    if (global.frame < INTRO - 1) {
+        global.frame++;
+    } else if (global.glitching >= 0) {
+        global.glitching++;
+        if (global.glitching >= GLITCH) { global.glitching = -1; global.frame = INTRO; global.dir = 1; }
+        else global.frame = INTRO + LOOP + global.glitching;
+    } else {
+        if (global.frame < INTRO) global.frame = INTRO;
+        global.frame += global.dir;
+        if (global.frame >= INTRO + LOOP - 1) { global.frame = INTRO + LOOP - 1; global.dir = -1; }
+        if (global.frame <= INTRO) { global.frame = INTRO; global.dir = 1; }
+        if (Math.Int(Math.Random() * 140) == 7) global.glitching = 0;   // glitch ocasional
+    }
+    skull.SetImage(frames[global.frame]);
+
+    // aparicion del texto
+    if (global.frame >= INTRO * 0.6 || global.glitching >= 0) {
+        o = title.GetOpacity();
+        if (o < 1) { title.SetOpacity(o + 0.08); sub.SetOpacity(o + 0.08); bar_bg.SetOpacity(o + 0.08); }
+    }
+    if (global.glitching >= 0 || Math.Int(Math.Random() * 90) == 3)
+        title.SetImage(glitch_img[Math.Int(Math.Random() * 2)]);
+    else
+        title.SetImage(title_img);
+}
+Plymouth.SetRefreshFunction(refresh_cb);
+
+fun progress_cb(duration, p) {
+    if (p > global.progress) global.progress = p;
+    w = Math.Int(bar_full.GetWidth() * global.progress);
+    if (w < 1) w = 1;
+    bar.SetImage(bar_full.Scale(w, bar_full.GetHeight()));
+    bar.SetOpacity(title.GetOpacity());
+}
+Plymouth.SetBootProgressFunction(progress_cb);
+
+// ---- mensajes (p. ej. "inserta la llave USB") ----
+msg = Sprite();
+msg.SetZ(20);
+fun message_cb(text) {
+    img = Image.Text(text, 1, 0.16, 0.2);
+    msg.SetImage(img);
+    msg.SetX(cx - img.GetWidth() / 2);
+    msg.SetY(bar_bg.GetY() + 40);
+}
+Plymouth.SetMessageFunction(message_cb);
+
+// ---- contrasena (discos cifrados) ----
+entry_img = Image("entry.png");
+bullet_img = Image("bullet.png");
+entry = Sprite(); entry.SetZ(30);
+prompt_s = Sprite(); prompt_s.SetZ(30);
+fun password_cb(prompt, count) {
+    entry.SetImage(entry_img);
+    entry.SetX(cx - entry_img.GetWidth() / 2);
+    entry.SetY(bar_bg.GetY() + 70);
+    entry.SetOpacity(1);
+    p = Image.Text(prompt, 0.9, 0.9, 0.9);
+    prompt_s.SetImage(p);
+    prompt_s.SetX(cx - p.GetWidth() / 2);
+    prompt_s.SetY(entry.GetY() - 26);
+    prompt_s.SetOpacity(1);
+    for (i = 0; i < 24; i++) {
+        if (!bullets[i]) { bullets[i] = Sprite(bullet_img); bullets[i].SetZ(31); }
+        bullets[i].SetX(entry.GetX() + 20 + i * 14);
+        bullets[i].SetY(entry.GetY() + 16);
+        if (i < count) bullets[i].SetOpacity(1); else bullets[i].SetOpacity(0);
+    }
+}
+Plymouth.SetDisplayPasswordFunction(password_cb);
+
+fun normal_cb() {
+    entry.SetOpacity(0);
+    prompt_s.SetOpacity(0);
+    for (i = 0; i < 24; i++) if (bullets[i]) bullets[i].SetOpacity(0);
+}
+Plymouth.SetDisplayNormalFunction(normal_cb);
+
+fun quit_cb() {
+    skull.SetImage(frames[INTRO + LOOP - 1]);
+}
+Plymouth.SetQuitFunction(quit_cb);

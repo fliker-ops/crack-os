@@ -1,0 +1,37 @@
+---
+componentName:  crackos
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 1000px,640px
+windowPlacement: center
+sidebar: widget
+navigation: widget
+
+strings:
+    productName:         "Crack OS"
+    shortProductName:    "Crack OS"
+    version:             "1.0"
+    shortVersion:        "1.0"
+    versionedName:       "Crack OS 1.0"
+    shortVersionedName:  "Crack OS 1.0"
+    bootloaderEntryName: "Debian"
+    productUrl:          "https://github.com/fliker-ops/crack-os"
+    supportUrl:          "https://github.com/fliker-ops/crack-os/issues"
+    knownIssuesUrl:      "https://github.com/fliker-ops/crack-os/issues"
+    releaseNotesUrl:     "https://github.com/fliker-ops/crack-os"
+    donateUrl:           ""
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            2
+
+style:
+   SidebarBackground:        "#0b0b0d"
+   SidebarText:              "#e6e6e6"
+   SidebarTextCurrent:       "#ff2832"
+   SidebarBackgroundCurrent: "#1c0a0c"

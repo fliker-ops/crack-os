@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=Crack OS
+Description=Calavera roja animada de Crack OS
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/crackos
+ScriptFile=/usr/share/plymouth/themes/crackos/crackos.script

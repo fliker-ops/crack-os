@@ -1,0 +1,12 @@
+#!/bin/sh
+# Crack OS: incluye lo necesario para el modo seguro y la llave USB
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+. /usr/share/initramfs-tools/hook-functions
+for m in overlay vfat exfat ext4 nls_cp437 nls_iso8859_1 nls_utf8 usb_storage uas \
+         xhci_pci xhci_hcd ehci_pci ehci_hcd ohci_pci uhci_hcd sd_mod; do
+    manual_add_modules "$m" 2>/dev/null || true
+done
+[ -x /usr/bin/sha256sum ] && copy_exec /usr/bin/sha256sum /bin
+exit 0

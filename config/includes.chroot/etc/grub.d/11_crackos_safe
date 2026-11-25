@@ -1,0 +1,37 @@
+#!/bin/sh
+# Crack OS: genera la entrada "Modo Seguro" (todo lo que se haga se borra al reiniciar).
+set -e
+prefix="/usr"
+exec_prefix="/usr"
+datarootdir="/usr/share"
+. "$pkgdatadir/grub-mkconfig_lib"
+
+CMDLINE="root=${GRUB_DEVICE_UUID:+UUID=}${GRUB_DEVICE_UUID:-$GRUB_DEVICE} ro quiet splash crack.safe=1 ${GRUB_CMDLINE_LINUX}"
+
+# kernel mas reciente
+for k in $(ls -1 /boot/vmlinuz-* 2>/dev/null | sort -V -r); do
+    version="${k#/boot/vmlinuz-}"
+    initrd="/boot/initrd.img-${version}"
+    [ -f "$initrd" ] || continue
+    break
+done
+[ -n "${version:-}" ] || exit 0
+
+boot_device_id="$(grub_get_device_id "${GRUB_DEVICE_BOOT}")" 2>/dev/null || true
+rel_dirname="$(make_system_path_relative_to_its_root /boot)"
+
+echo "Creando entrada Crack OS - Modo Seguro: ${version}" >&2
+cat <<GRUBEOF
+menuentry 'Crack OS  //  Modo Seguro (nada se guarda)' --class crackos --class gnu-linux \$menuentry_id_option 'crackos-safe' {
+	load_video
+	insmod gzio
+	insmod part_gpt
+	insmod part_msdos
+GRUBEOF
+prepare_grub_to_access_device "${GRUB_DEVICE_BOOT}" | sed -e "s/^/\t/"
+cat <<GRUBEOF
+	echo 'Iniciando Crack OS en Modo Seguro...'
+	linux ${rel_dirname}/vmlinuz-${version} ${CMDLINE}
+	initrd ${rel_dirname}/initrd.img-${version}
+}
+GRUBEOF

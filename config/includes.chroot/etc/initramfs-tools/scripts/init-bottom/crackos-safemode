@@ -1,0 +1,43 @@
+#!/bin/sh
+# Crack OS: MODO SEGURO.
+# Con "crack.safe=1" en la linea del kernel, el disco se monta solo-lectura y todos
+# los cambios se guardan en RAM (overlayfs + tmpfs). Al reiniciar desaparecen.
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0 ;; esac
+. /scripts/functions
+
+grep -qw "boot=live" /proc/cmdline && exit 0
+if ! grep -qw "crack.safe=1" /proc/cmdline && [ ! -f /run/crackos-force-safe ]; then
+    exit 0
+fi
+
+modprobe -q overlay || { log_failure_msg "Crack OS: overlayfs no disponible, modo normal"; exit 0; }
+mkdir -p /run/crack/lower /run/crack/rw
+mount -t tmpfs -o mode=0755,size=60% crack-rw /run/crack/rw || exit 0
+mkdir -p /run/crack/rw/upper /run/crack/rw/work
+
+# el disco real queda solo-lectura debajo
+mount -o remount,ro "${rootmnt}" 2>/dev/null
+mount -o move "${rootmnt}" /run/crack/lower || exit 0
+if ! mount -t overlay -o lowerdir=/run/crack/lower,upperdir=/run/crack/rw/upper,workdir=/run/crack/rw/work \
+        crack-safe "${rootmnt}"; then
+    log_failure_msg "Crack OS: no se pudo crear el overlay, modo normal"
+    mount -o move /run/crack/lower "${rootmnt}"
+    exit 0
+fi
+mkdir -p "${rootmnt}/media/crack-disk" "${rootmnt}/media/crack-ram"
+mount -o move /run/crack/lower "${rootmnt}/media/crack-disk"
+mount -o move /run/crack/rw "${rootmnt}/media/crack-ram"
+
+# fstab en RAM: no montar otras particiones del disco (p. ej. /home separado) ni swap
+cat > "${rootmnt}/etc/fstab" <<FSTAB
+# Crack OS - MODO SEGURO: la raiz vive en RAM, nada se escribe en el disco.
+crack-safe / overlay rw 0 0
+tmpfs /tmp tmpfs defaults,nosuid,nodev 0 0
+FSTAB
+# avisa a la pantalla de acceso
+mkdir -p "${rootmnt}/usr/share/sddm/themes/crackos"
+printf '[General]\nsafeMode=true\n' > "${rootmnt}/usr/share/sddm/themes/crackos/theme.conf.user"
+echo "1" > "${rootmnt}/etc/crackos/safe-mode-active"
+exit 0

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Crack OS Session
+Exec=/usr/local/bin/crackos-session
+OnlyShowIn=XFCE;
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
