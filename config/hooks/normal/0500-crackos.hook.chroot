@@ -98,7 +98,10 @@ fi
 mkdir -p /usr/share/sddm/faces
 cp /usr/share/crackos/face.png /usr/share/sddm/faces/.face.icon
 rm -f /usr/share/sddm/themes/crackos/theme.conf.user
+# SDDM como unico gestor de acceso
+apt-get purge -y lightdm lightdm-gtk-greeter slick-greeter light-locker >/dev/null 2>&1 || true
 echo "/usr/bin/sddm" > /etc/X11/default-display-manager
+ln -sf /lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
 # avatar por defecto para usuarios nuevos
 cp /usr/share/crackos/face.png /etc/skel/.face
 ln -sf .face /etc/skel/.face.icon
