@@ -54,8 +54,9 @@ G=config/bootloaders/grub-pc
 rm -f "$G/splash.png"; cp "$OV/splash-grub.png" "$G/splash.png"
 mkdir -p "$G/live-theme"
 cat > "$G/live-theme/theme.txt" <<'GRUBTHEME'
-desktop-image: "../splash.png"
+desktop-image: "crack-bg.png"
 title-text: ""
+terminal-font: "Unifont Regular 16"
 message-color: "#e6e6e6"
 terminal-box: "terminal_box_*.png"
 + boot_menu {
@@ -63,6 +64,8 @@ terminal-box: "terminal_box_*.png"
     width = 40%
     top = 52%
     height = 34%
+    item_font = "Unifont Regular 16"
+    selected_item_font = "Unifont Regular 16"
     item_color = "#a0a0a0"
     selected_item_color = "#ffffff"
     item_height = 32
@@ -83,6 +86,7 @@ terminal-box: "terminal_box_*.png"
     border_color = "#3c080c"
 }
 GRUBTHEME
+cp "$OV/splash-grub.png" "$G/live-theme/crack-bg.png"
 cp config/includes.chroot/boot/grub/themes/crackos/select_*.png "$G/live-theme/" || true
 cp config/includes.chroot/boot/grub/themes/crackos/terminal_box_*.png "$G/live-theme/" || true
 cat >> "$G/theme.cfg" <<'GRUBCOLORS'
