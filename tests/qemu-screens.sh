@@ -24,6 +24,9 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     local last=4
     for t in "$@"; do sleep $((t - last)); last=$t; shot "$sock" "$mode-$(printf %03d "$t")s"; done
     if [ "$mode" = bios ]; then
+        # si aparece la pantalla de acceso, entra con la clave del Live ("live")
+        for k in l i v e ret; do key "$sock" $k; sleep 0.3; done
+        sleep 25; shot "$sock" "bios-89-escritorio"
         key "$sock" ctrl-alt-t; sleep 8; shot "$sock" "bios-90-terminal"
         key "$sock" alt-f4; sleep 2
         echo "mouse_move 22 30" | socat - "UNIX-CONNECT:$sock" >/dev/null 2>&1
