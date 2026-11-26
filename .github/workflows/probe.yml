@@ -17,8 +17,8 @@ jobs:
             export XDG_RUNTIME_DIR=/tmp/xdg; mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR
             Hyprland --version | head -3
             echo "===== CONFIG POR DEFECTO ====="
-            f=$(find /usr/share -name "hyprland.conf*" | head -1); echo "$f"; zcat -f "$f"
+            dpkg -L hyprland | grep -iE "conf|exampl|hypr/" | head; f=$(dpkg -L hyprland | grep -iE "hyprland.conf" | head -1); zcat -f "$f" | grep -vE "^\s*(#|$)"
             echo "===== VERIFICAR CRACK OS ====="
             mkdir -p /usr/share/crackos && cp -r /w/config/includes.chroot/usr/share/crackos/hypr /usr/share/crackos/
-            Hyprland --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
+            Hyprland --i-am-really-stupid --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
           '
