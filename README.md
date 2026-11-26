@@ -8,14 +8,6 @@ que borra todo al reiniciar y **llave USB opcional** para el modo normal.
 |---|---|---|
 | ![login](docs/login.png) | ![fondo](docs/wallpaper.png) | ![grub](docs/grub.png) |
 
-## Descargar la ISO
-
-Cada cambio en `main` compila la ISO automáticamente en GitHub Actions:
-
-1. Pestaña **Actions** → último *"Compilar ISO de Crack OS"* con ✅.
-2. Abajo, en **Artifacts**, descarga `crack-os-1.0-amd64` (es un .zip con la ISO dentro).
-3. Grábala en una USB con [Rufus](https://rufus.ie) (modo **DD** si lo pregunta) o balenaEtcher.
-
 ## Qué incluye
 
 - **Arranque**: menú GRUB propio, animación Plymouth con la calavera del video (aparece, brillan los
