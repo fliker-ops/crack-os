@@ -3,16 +3,22 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/probe.yml']
+    paths: ['.github/workflows/probe.yml', 'config/includes.chroot/usr/share/crackos/hypr/**', 'config/includes.chroot/etc/skel/.config/hypr/**']
 jobs:
   probe:
     runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        image: ["debian:trixie", "debian:trixie-backports", "debian:sid"]
     steps:
+      - uses: actions/checkout@v4
       - run: |
-          img="${{ matrix.image }}"
-          extra=""
-          if [ "$img" = "debian:trixie-backports" ]; then img=debian:trixie; extra='echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list;'; fi
-          docker run --rm $img bash -c "$extra apt-get update -qq >/dev/null 2>&1; for p in hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland waybar wofi cmatrix wlogout nwg-look cliphist swayosd qml6-module-qtquick fonts-wqy-microhei sddm wayfire niri swayfx; do printf '%-28s %s\n' \$p \"\$(apt-cache policy \$p 2>/dev/null | awk '/Candidate/{print \$2}')\"; done; apt-cache policy | head -20"
+          docker run --rm -v "$PWD":/w debian:trixie bash -c '
+            echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list
+            printf "Package: *hypr* *aquamarine*\nPin: release a=trixie-backports\nPin-Priority: 990\n" > /etc/apt/preferences.d/hypr
+            apt-get update -qq >/dev/null 2>&1
+            apt-get install -y -qq hyprland hyprlock hypridle >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
+            Hyprland --version | head -3
+            echo "===== CONFIG POR DEFECTO ====="
+            cat /usr/share/hypr/hyprland.conf
+            echo "===== VERIFICAR CRACK OS ====="
+            mkdir -p /usr/share/crackos && cp -r /w/config/includes.chroot/usr/share/crackos/hypr /usr/share/crackos/
+            Hyprland --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
+          '
