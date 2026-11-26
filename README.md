@@ -1,3 +1,7 @@
+
+# Security and stability and privacy, first and foremost
+
+
 # Crack OS
 
 Sistema operativo de uso diario basado en **Debian 13 "trixie" (estable)**, con escritorio **Hyprland**
