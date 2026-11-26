@@ -69,25 +69,9 @@ color-scheme='prefer-dark'
 DCONF
 dconf update 2>/dev/null || true
 
-# ---- Hyprland: sombras segun la version instalada ----
-HV=$(dpkg-query -W -f='${Version}' hyprland 2>/dev/null | sed 's/[+~-].*//')
+# ---- Hyprland ----
+HV=$(dpkg-query -W -f='${Version}' hyprland 2>/dev/null)
 echo "[crackos] Hyprland $HV"
-if dpkg --compare-versions "${HV:-0}" ge 0.45; then
-    cat > /usr/share/crackos/hypr/shadow.conf <<'SH'
-decoration {
-    shadow {
-        enabled = true
-        range = 22
-        render_power = 3
-        color = rgba(000000cc)
-    }
-}
-SH
-fi
-if dpkg --compare-versions "${HV:-0}" ge 0.48; then
-    # en 0.48+ los gestos usan otra sintaxis
-    sed -i '/^gestures {/,/^}/d' /usr/share/crackos/hypr/theme.conf
-fi
 ls /usr/share/wayland-sessions/ || true
 
 # ---- GRUB: nombre "Crack OS" en el menu sin cambiar el id EFI "debian" ----
