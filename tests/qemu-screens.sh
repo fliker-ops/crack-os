@@ -3,6 +3,7 @@
 # Uso: tests/qemu-screens.sh crack-os-1.0-amd64.iso
 set -u
 ISO="$1"; OUT=screens; mkdir -p "$OUT"
+DISK=""; command -v qemu-img >/dev/null && qemu-img create -q -f qcow2 /tmp/disco.qcow2 30G && DISK="-drive file=/tmp/disco.qcow2,if=virtio"
 KVM=""; [ -w /dev/kvm ] && KVM="-enable-kvm -cpu host"
 
 shot() { # $1 socket  $2 nombre
@@ -16,7 +17,7 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     local sock=/tmp/mon-$mode.sock; rm -f "$sock" "$sock.rec"
     local fw=""
     [ "$mode" = uefi ] && fw="-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd"
-    qemu-system-x86_64 $KVM -m 4096 -smp 2 $fw -cdrom "$ISO" -boot d -vga virtio -usb -device usb-tablet \
+    qemu-system-x86_64 $KVM -m 4096 -smp 2 $fw -cdrom "$ISO" -boot d $DISK -vga virtio -usb -device usb-tablet \
         -display none -monitor "unix:$sock,server,nowait" -monitor "unix:$sock.rec,server,nowait" -serial file:"$OUT/serial-$mode.log" &
     local pid=$!
     if [ "$mode" = bios ]; then
@@ -39,7 +40,7 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         sleep 30; shot "$sock" "bios-89-escritorio"
         key "$sock" meta_l-ret; sleep 8; shot "$sock" "bios-90-terminal"
         type crackdiag; sleep 4; shot "$sock" "bios-93-diagnostico"
-        type "sudo crackdiag serie"; sleep 3
+        type "sudo crackdiag serie"; sleep 12
         type "crackos-usbkey status"; sleep 3
         key "$sock" meta_l-spc; sleep 4; shot "$sock" "bios-91-aplicaciones"
         key "$sock" esc; sleep 2
@@ -57,17 +58,22 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         key "$sock" meta_l-ret; sleep 6
         type "sudo -E calamares"; sleep 35; shot "$sock" "bios-98-instalador"
         key "$sock" meta_l-q; sleep 3
+        # pantalla de acceso de Crack OS en modo de prueba (en el Live entra directo al escritorio)
+        key "$sock" meta_l-ret; sleep 5
+        type "sddm-greeter-qt6 --test-mode"; sleep 15; shot "$sock" "bios-99-acceso"
+        key "$sock" meta_l-f; sleep 4; shot "$sock" "bios-99-acceso-completo"
+        key "$sock" meta_l-q; sleep 3
         shot "$sock" "bios-99-final"
     fi
     kill $pid 2>/dev/null; wait $pid 2>/dev/null
     if [ "$mode" = bios ] && [ -n "${REC:-}" ]; then
         wait $REC 2>/dev/null; sleep 3; ls /tmp/rec | wc -l
         ffmpeg -v error -y -framerate 3 -pattern_type glob -i '/tmp/rec/*.jpg' \
-            -vf "scale=1280:-2" -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p "$OUT/recorrido.mp4" \
+            -vf "mpdecimate=hi=64*24:lo=64*12:frac=0.5,setpts=N/3/TB,scale=1280:-2" -r 3 -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p "$OUT/recorrido.mp4" \
             && echo "video: $(du -h "$OUT/recorrido.mp4" | cut -f1)"
     fi
 }
 
 run uefi 8
-run bios 10 20 45 75 100
+run bios 10 20 45 60
 ls -la "$OUT"

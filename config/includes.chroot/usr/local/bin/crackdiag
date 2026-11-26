@@ -19,3 +19,9 @@ if [ "${1:-}" = serie ] && [ -w /dev/ttyS0 ]; then
         echo "===== FIN ====="
     } > /dev/ttyS0 2>&1
 fi
+if [ "${1:-}" = serie ] && [ -w /dev/ttyS0 ]; then
+    {
+        echo "===== GREETER (offscreen) ====="; ls -la /usr/share/sddm/themes/
+        su -s /bin/sh sddm -c "XDG_RUNTIME_DIR=/tmp QT_QPA_PLATFORM=offscreen timeout 8 sddm-greeter-qt6 --test-mode" 2>&1 | head -30
+    } > /dev/ttyS0 2>&1
+fi
