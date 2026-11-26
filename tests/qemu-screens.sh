@@ -57,12 +57,11 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         key "$sock" esc; sleep 2
         key "$sock" meta_l-ret; sleep 6
         type "sudo -E calamares"; sleep 35; shot "$sock" "bios-98-instalador"
-        key "$sock" meta_l-q; sleep 3
-        # pantalla de acceso de Crack OS en modo de prueba (en el Live entra directo al escritorio)
-        key "$sock" meta_l-ret; sleep 5
-        type "sddm-greeter-qt6 --test-mode"; sleep 15; shot "$sock" "bios-99-acceso"
-        key "$sock" meta_l-f; sleep 4; shot "$sock" "bios-99-acceso-completo"
-        key "$sock" meta_l-q; sleep 3
+        key "$sock" meta_l-q; sleep 2; key "$sock" alt-s; sleep 3
+        # cerrar sesion desde el menu de energia: SDDM muestra la pantalla de acceso de Crack OS
+        key "$sock" meta_l-shift-e; sleep 4
+        key "$sock" down; sleep 1; key "$sock" down; sleep 1; key "$sock" ret; sleep 20; shot "$sock" "bios-99-acceso"
+        type live; sleep 25; shot "$sock" "bios-99-de-vuelta"
         shot "$sock" "bios-99-final"
     fi
     kill $pid 2>/dev/null; wait $pid 2>/dev/null
