@@ -19,5 +19,8 @@ jobs:
             DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends sddm qml6-module-qtquick qml6-module-qtquick-window qml6-module-qtqml-workerscript qml-module-qtquick2 qml-module-qtquick-window2 xauth >/tmp/i.log 2>&1 || tail -20 /tmp/i.log
             ls /usr/bin | grep -i sddm
             export XDG_RUNTIME_DIR=/tmp/xdg QT_QPA_PLATFORM=offscreen; mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR
-            for g in /usr/bin/sddm-greeter*; do echo "--- $g"; timeout 12 $g --test-mode --theme /w/config/includes.chroot/usr/share/sddm/themes/crackos 2>&1 | grep -viE "^$" | head -40; done
+            cp -r /w/config/includes.chroot/usr/share/sddm/themes/crackos /usr/share/sddm/themes/; mkdir -p /etc/sddm.conf.d; cp /w/config/includes.chroot/etc/sddm.conf.d/* /etc/sddm.conf.d/
+            mkdir -p /usr/share/backgrounds/crackos; cp /w/config/includes.chroot/usr/share/backgrounds/crackos/* /usr/share/backgrounds/crackos/ 2>/dev/null
+            echo "--- con config del sistema"; timeout 12 sddm-greeter-qt6 --test-mode 2>&1 | head -60
+            echo "--- QT_DEBUG_PLUGINS/qml import trace"; QML_IMPORT_TRACE=0 timeout 12 sddm-greeter-qt6 --test-mode --theme /usr/share/sddm/themes/crackos 2>&1 | head -40
           '
