@@ -85,8 +85,8 @@ Rectangle {
             onTriggered: {
                 var d = new Date();
                 clockTxt.text = Qt.formatTime(d, "HH:mm");
-                secTxt.text = Qt.formatDate(d, "dddd d");
-                dateTxt.text = Qt.formatDate(d, "d MMMM yyyy");
+                secTxt.text = d.toLocaleDateString(Qt.locale("es_ES"), "dddd d");
+                dateTxt.text = d.toLocaleDateString(Qt.locale("es_ES"), "d MMMM yyyy");
             }
         }
     }
