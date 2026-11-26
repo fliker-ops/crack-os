@@ -9,7 +9,7 @@ Solo usa la biblioteca estandar de Python (PIL es opcional, para miniaturas).
 """
 import asyncio, base64, collections, ctypes, ctypes.util, fcntl, glob, grp, hashlib, hmac
 import json, os, pty, pwd, re, secrets, shutil, signal, socket, struct, subprocess, sys
-import termios, threading, time, urllib.parse
+import shlex, termios, threading, time, urllib.parse
 
 VERSION = "1.0"
 CONF_FILE = "/etc/crackos/remote.conf"
@@ -509,7 +509,7 @@ def launch(pw, cmd):
     if kind == "hyprland":
         run_as(pw, ["hyprctl", "dispatch", "exec", cmd], timeout=5)
     elif kind == "sway":
-        run_as(pw, ["swaymsg", "exec", cmd], timeout=5)
+        run_as(pw, ["swaymsg", "exec", f"cd {shlex.quote(pw.pw_dir)} && {cmd}"], timeout=5)
     elif kind == "wayland":
         spawn_as(pw, ["sh", "-c", cmd])
     else:

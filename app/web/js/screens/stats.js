@@ -69,7 +69,7 @@ export default {
         lineChart($('#c3', box), [{ data: H.dr.slice(-180), color: '#ff2832' }, { data: H.dw.slice(-180), color: '#ff9a3c', fill: false }], { height: 110, fmt: v => bytes(v, 0) });
         const temps = H.temp.filter(v => v != null);
         if (temps.length) lineChart($('#c4', box), [{ data: temps.slice(-300), color: '#ff2832' }], { height: 100, min: Math.max(0, Math.min(...temps) - 10), max: Math.max(...temps) + 10, fmt: v => v.toFixed(0) + '°' });
-        else $('#c4', box).outerHTML = '<p class="small mut">Esta PC no reporta sensores de temperatura.</p>';
+        else if ($('#c4', box)) $('#c4', box).outerHTML = '<p class="small mut">Esta PC no reporta sensores de temperatura.</p>';
         if (last) {
           $('#rx', box).textContent = '↓ ' + bytes(last.rx) + '/s'; $('#tx', box).textContent = '↑ ' + bytes(last.tx) + '/s';
           $('#cores', box).innerHTML = `<div class="grid4">${last.cores.map((c, i) => `<div><div class="small mut">núcleo ${i}</div><div class="usebar"><i style="width:${c}%"></i></div><b class="small">${c.toFixed(0)}%</b></div>`).join('')}</div>`;

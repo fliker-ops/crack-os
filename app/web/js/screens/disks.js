@@ -12,7 +12,8 @@ export default {
     const load = async () => {
       el.innerHTML = '<div class="empty"><span class="spin"></span></div>';
       let r;
-      try { r = await get('/api/disks'); } catch (e) { el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+      try { r = await get('/api/disks'); } catch (e) { if (!el.isConnected) return; el.innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+      if (!el.isConnected) return;
       el.innerHTML = `<p class="small mut" style="margin:6px 2px">${r.disks.length} discos encontrados. Las particiones donde corre el sistema están protegidas y no se pueden formatear.</p>` +
         r.disks.map((d, di) => {
           const parts = d.parts.length ? d.parts : [{ ...d, whole: true, type: d.fstype ? 'sin tabla de particiones' : 'vacío' }];
@@ -103,9 +104,10 @@ async function formatFlow(path, dev, whole, admin) {
   if (!res) return false;
   // paso 3: progreso real
   return new Promise(resolve => {
+    let poll;
     modal({ title: `Formateando ${path}`, body: `<div class="usebar" style="height:10px"><i id="jp" style="width:0"></i></div><p class="small mut" id="jst">Trabajando…</p><div class="terminal-log" id="jl"></div>`,
       onOpen: (m, close) => {
-        const poll = setInterval(async () => {
+        poll = setInterval(async () => {
           try {
             const j = await get('/api/jobs?id=' + res);
             m.querySelector('#jp').style.width = j.progress + '%';
@@ -120,6 +122,6 @@ async function formatFlow(path, dev, whole, admin) {
           } catch {}
         }, 700);
       },
-      actions: [{ label: 'Cerrar', value: true, kind: 'primary' }] }).then(() => resolve(true));
+      actions: [{ label: 'Cerrar', value: true, kind: 'primary' }] }).then(() => { clearInterval(poll); resolve(true); });
   });
 }
