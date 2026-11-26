@@ -12,10 +12,9 @@ jobs:
       - run: |
           docker run --rm -v "$PWD":/w debian:trixie bash -c '
             echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list
-            printf "Package: *hypr* *aquamarine*\nPin: release a=trixie-backports\nPin-Priority: 990\n" > /etc/apt/preferences.d/hypr
             apt-get update -qq >/dev/null 2>&1
-            apt-get install -y -qq hyprland hyprlock hypridle >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
-            Hyprland --version | head -3
+            apt-get install -y -qq -t trixie-backports hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
+            Hyprland --version | head -3; apt list --installed 2>/dev/null | grep -c bpo13; apt list --installed 2>/dev/null | grep bpo13 | cut -d/ -f1 | tr "\n" " "
             echo "===== CONFIG POR DEFECTO ====="
             cat /usr/share/hypr/hyprland.conf
             echo "===== VERIFICAR CRACK OS ====="
