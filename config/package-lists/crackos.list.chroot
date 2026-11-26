@@ -50,8 +50,6 @@ calamares
 calamares-settings-debian
 
 # ===== Escritorio (Hyprland) =====
-hyprland
-xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
 xwayland
 waybar

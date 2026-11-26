@@ -3,6 +3,11 @@
 set -e
 echo "[crackos] aplicando personalizacion"
 
+# ---- Hyprland desde los backports oficiales de Debian 13 ----
+apt-get update -qq
+apt-get install -y -t trixie-backports hyprland xdg-desktop-portal-hyprland hyprlock hypridle
+apt-get install -y -t trixie-backports hyprpaper || true
+
 # ---- Identidad del sistema (sin cambiar ID=debian para no romper apt) ----
 if [ ! -L /etc/os-release ] || [ "$(readlink -f /etc/os-release)" = /usr/lib/os-release ]; then
     dpkg-divert --quiet --local --rename --add /usr/lib/os-release || true

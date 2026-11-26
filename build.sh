@@ -38,6 +38,7 @@ fi
 
 echo "==> Paquetes opcionales disponibles en Debian"
 : > config/package-lists/optional.list.chroot
+apt-get update -qq
 grep -v '^\s*#' config/optional-packages.list | while read -r p; do
     [ -n "$p" ] || continue
     if apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [0-9]'; then
