@@ -39,10 +39,7 @@ if [ -d /usr/share/themes/Matcha-dark-aliz ]; then
 else
     echo "[crackos] AVISO: Matcha-dark-aliz no encontrado, usando Adwaita-dark"
     THEME=Adwaita-dark
-    sed -i "s/Matcha-dark-aliz/Adwaita-dark/g" \
-        /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/*.xml
-    sed -i "s/value=\"Adwaita-dark\"\/>/value=\"Default\"\/>/" \
-        /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml || true
+    sed -i "s/Matcha-dark-aliz/Adwaita-dark/g" /usr/share/crackos/hypr/env.conf /usr/local/bin/crackos-session
 fi
 # carpetas de Papirus en rojo
 if [ -x /usr/local/bin/papirus-folders ] && [ -d /usr/share/icons/Papirus-Dark ]; then
@@ -58,6 +55,40 @@ gtk-font-name=JetBrainsMono Nerd Font 10
 gtk-application-prefer-dark-theme=1
 GTK
 gtk-update-icon-cache -f /usr/share/icons/hicolor >/dev/null 2>&1 || true
+# GTK en Wayland lee gsettings: valores por defecto del sistema
+mkdir -p /etc/dconf/profile /etc/dconf/db/local.d
+printf 'user-db:user\nsystem-db:local\n' > /etc/dconf/profile/user
+cat > /etc/dconf/db/local.d/00-crackos <<DCONF
+[org/gnome/desktop/interface]
+gtk-theme='$THEME'
+icon-theme='Papirus-Dark'
+font-name='JetBrainsMono Nerd Font 10'
+monospace-font-name='JetBrainsMono Nerd Font Mono 10'
+cursor-theme='Adwaita'
+color-scheme='prefer-dark'
+DCONF
+dconf update 2>/dev/null || true
+
+# ---- Hyprland: sombras segun la version instalada ----
+HV=$(dpkg-query -W -f='${Version}' hyprland 2>/dev/null | sed 's/[+~-].*//')
+echo "[crackos] Hyprland $HV"
+if dpkg --compare-versions "${HV:-0}" ge 0.45; then
+    cat > /usr/share/crackos/hypr/shadow.conf <<'SH'
+decoration {
+    shadow {
+        enabled = true
+        range = 22
+        render_power = 3
+        color = rgba(000000cc)
+    }
+}
+SH
+fi
+if dpkg --compare-versions "${HV:-0}" ge 0.48; then
+    # en 0.48+ los gestos usan otra sintaxis
+    sed -i '/^gestures {/,/^}/d' /usr/share/crackos/hypr/theme.conf
+fi
+ls /usr/share/wayland-sessions/ || true
 
 # ---- GRUB: nombre "Crack OS" en el menu sin cambiar el id EFI "debian" ----
 # (el GRUB firmado para Secure Boot busca su configuracion en /EFI/debian)
@@ -142,10 +173,11 @@ if [ -n "$KDE" ]; then
     apt-get purge -y $KDE
     apt-get autoremove --purge -y
 fi
-for p in sddm xfce4 xfce4-panel calamares firefox-esr plymouth; do
+for p in sddm calamares firefox-esr plymouth; do
     dpkg -s "$p" >/dev/null 2>&1 || { echo "[crackos] ERROR: falta $p"; exit 1; }
 done
 rm -f /usr/share/wayland-sessions/plasma*.desktop /usr/share/xsessions/plasma*.desktop
+for p in hyprland waybar wofi kitty swaybg; do dpkg -s "$p" >/dev/null 2>&1 || { echo "[crackos] ERROR: falta $p"; exit 1; }; done
 
 # ---- Limpieza ----
 rm -f /etc/skel/.config/crackos/.wallpaper-set

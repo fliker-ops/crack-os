@@ -1,0 +1,12 @@
+#!/bin/bash
+# Crack OS: menu de energia
+pkill wofi && exit 0
+opt=$(printf '󰌾   Bloquear\n󰤄   Suspender\n󰍃   Cerrar sesión\n󰜉   Reiniciar\n⏻   Apagar\n' | \
+      wofi --dmenu --prompt "Energía" --width 300 --height 290 --cache-file /dev/null --hide-search 2>/dev/null)
+case "$opt" in
+  *Bloquear) crackos-lock ;;
+  *Suspender) crackos-lock & sleep 1; systemctl suspend ;;
+  *Cerrar*) hyprctl dispatch exit ;;
+  *Reiniciar) systemctl reboot ;;
+  *Apagar) systemctl poweroff ;;
+esac

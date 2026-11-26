@@ -18,3 +18,4 @@ config/source
 config/build
 config/bootloaders/
 __pycache__/
+config/package-lists/optional.list.chroot

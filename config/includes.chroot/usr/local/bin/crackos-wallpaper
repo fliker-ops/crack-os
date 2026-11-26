@@ -1,0 +1,12 @@
+#!/bin/bash
+# Crack OS: cambia el fondo.  crackos-wallpaper next | /ruta/imagen.png
+mapfile -t L < <(ls -1 /usr/share/backgrounds/crackos/*.png "$HOME"/Imágenes/Fondos/*.{png,jpg} 2>/dev/null | grep -v -- '-safe\|-login')
+cur=$(cat "$HOME/.config/crackos/wallpaper" 2>/dev/null)
+if [ "${1:-next}" = next ]; then
+    n=${#L[@]}; [ "$n" -gt 0 ] || exit 1
+    i=0; for k in "${!L[@]}"; do [ "${L[$k]}" = "$cur" ] && i=$(( (k + 1) % n )); done
+    new="${L[$i]}"
+else new="$1"; fi
+[ -f "$new" ] || exit 1
+mkdir -p "$HOME/.config/crackos"; echo "$new" > "$HOME/.config/crackos/wallpaper"
+pkill -x swaybg; swaybg -m fill -i "$new" >/dev/null 2>&1 & disown

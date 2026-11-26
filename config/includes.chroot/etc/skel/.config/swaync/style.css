@@ -1,0 +1,34 @@
+/* Crack OS - notificaciones y centro de control */
+* { font-family: "JetBrainsMono Nerd Font", sans-serif; }
+.control-center {
+    background: rgba(14, 8, 10, 0.86);
+    border: 1px solid rgba(255, 40, 50, 0.4);
+    border-radius: 18px;
+    padding: 10px;
+    color: #f1e9ea;
+}
+.notification-row { outline: none; }
+.notification, .notification-default-action {
+    background: rgba(20, 11, 13, 0.9);
+    border-radius: 14px;
+    color: #f1e9ea;
+}
+.notification { border: 1px solid rgba(255, 40, 50, 0.35); margin: 6px; }
+.notification.critical { border-color: #ff2832; }
+.summary { font-weight: bold; color: #ffffff; }
+.body { color: #d5c8ca; }
+.close-button { background: #ff2832; color: #120607; border-radius: 10px; }
+.widget-title > button, .widget-dnd > switch {
+    background: rgba(255, 40, 50, 0.2);
+    border-radius: 12px;
+    color: #ffffff;
+    border: 1px solid rgba(255, 40, 50, 0.4);
+}
+.widget-dnd > switch:checked { background: #ff2832; }
+.widget-volume, .widget-backlight, .widget-mpris {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    padding: 8px;
+    margin: 6px 0;
+}
+trough highlight { background: #ff2832; }

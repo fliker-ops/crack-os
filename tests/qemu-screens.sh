@@ -16,7 +16,7 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     local sock=/tmp/mon-$mode.sock; rm -f "$sock" "$sock.rec"
     local fw=""
     [ "$mode" = uefi ] && fw="-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd"
-    qemu-system-x86_64 $KVM -m 4096 -smp 2 $fw -cdrom "$ISO" -boot d -vga std -usb -device usb-tablet \
+    qemu-system-x86_64 $KVM -m 4096 -smp 2 $fw -cdrom "$ISO" -boot d -vga virtio -usb -device usb-tablet \
         -display none -monitor "unix:$sock,server,nowait" -monitor "unix:$sock.rec,server,nowait" -serial file:"$OUT/serial-$mode.log" &
     local pid=$!
     if [ "$mode" = bios ]; then
@@ -34,26 +34,27 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         type() { local w="$1" i c; for ((i=0; i<${#w}; i++)); do c="${w:i:1}"; case "$c" in " ") c=spc ;; "-") c=slash ;; esac; key "$sock" "$c"; sleep 0.12; done; key "$sock" ret; }
         # si aparece la pantalla de acceso, entra con la clave del Live ("live")
         type live
-        sleep 25; shot "$sock" "bios-89-escritorio"
-        key "$sock" ctrl-alt-t; sleep 8; shot "$sock" "bios-90-terminal"
-        type clear; type crackdiag
-        sleep 4; shot "$sock" "bios-93-diagnostico"
-        type "ls"; sleep 2
+        sleep 30; shot "$sock" "bios-89-escritorio"
+        key "$sock" meta_l-ret; sleep 8; shot "$sock" "bios-90-terminal"
+        type crackdiag; sleep 4; shot "$sock" "bios-93-diagnostico"
         type "crackos-usbkey status"; sleep 3
-        key "$sock" alt-f4; sleep 2
-        key "$sock" ctrl-esc; sleep 4; shot "$sock" "bios-91-menu-aplicaciones"
+        key "$sock" meta_l-spc; sleep 4; shot "$sock" "bios-91-aplicaciones"
         key "$sock" esc; sleep 2
         key "$sock" meta_l-e; sleep 8; shot "$sock" "bios-92-archivos"
-        key "$sock" alt-f4; sleep 2
-        key "$sock" meta_l-b; sleep 25; shot "$sock" "bios-94-navegador"
-        key "$sock" alt-f4; sleep 3
-        key "$sock" ctrl-alt-right; sleep 2; key "$sock" ctrl-alt-right; sleep 2
-        shot "$sock" "bios-95-escritorio3"
-        key "$sock" ctrl-alt-left; sleep 1; key "$sock" ctrl-alt-left; sleep 2
-        key "$sock" ctrl-alt-t; sleep 6
-        type "sudo -E calamares"; sleep 30; shot "$sock" "bios-96-instalador"
-        key "$sock" alt-f4; sleep 3; key "$sock" alt-f4; sleep 2
-        shot "$sock" "bios-97-final"
+        key "$sock" meta_l-f1; sleep 4; shot "$sock" "bios-94-atajos"
+        key "$sock" esc; sleep 2
+        key "$sock" meta_l-2; sleep 3
+        key "$sock" meta_l-b; sleep 30; shot "$sock" "bios-95-navegador"
+        key "$sock" meta_l-q; sleep 3
+        key "$sock" meta_l-1; sleep 3
+        key "$sock" meta_l-n; sleep 4; shot "$sock" "bios-96-notificaciones"
+        key "$sock" meta_l-n; sleep 2
+        key "$sock" meta_l-shift-e; sleep 4; shot "$sock" "bios-97-energia"
+        key "$sock" esc; sleep 2
+        key "$sock" meta_l-ret; sleep 6
+        type "sudo -E calamares"; sleep 35; shot "$sock" "bios-98-instalador"
+        key "$sock" meta_l-q; sleep 3
+        shot "$sock" "bios-99-final"
     fi
     kill $pid 2>/dev/null; wait $pid 2>/dev/null
     if [ "$mode" = bios ] && [ -n "${REC:-}" ]; then

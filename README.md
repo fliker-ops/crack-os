@@ -1,7 +1,7 @@
 # Crack OS
 
-Sistema operativo de uso diario basado en **Debian 12 "bookworm" (estable)**, con escritorio XFCE
-rediseñado en negro y rojo, animación de arranque con la calavera de Crack OS, **modo seguro**
+Sistema operativo de uso diario basado en **Debian 13 "trixie" (estable)**, con escritorio **Hyprland**
+configurado a mano en negro y rojo, animación de arranque con la calavera de Crack OS, **modo seguro**
 que borra todo al reiniciar y **llave USB opcional** para el modo normal.
 
 | Pantalla de acceso | Escritorio | Menú de arranque |
@@ -22,12 +22,28 @@ Cada cambio en `main` compila la ISO automáticamente en GitHub Actions:
   ojos en bucle y hace *glitch* de vez en cuando), barra de progreso y campo de contraseña para discos cifrados.
 - **Pantalla de acceso** (tema SDDM propio): selección de usuarios con flechas o clic, reloj,
   selector de sesión, suspender / reiniciar / apagar. Indica cuando estás en modo seguro.
-- **Escritorio**: panel vertical tipo dock (menú, escritorios virtuales como pastillas, terminal,
-  archivos, navegador, bandeja, volumen, batería, notificaciones, reloj vertical, bloquear/apagar),
-  ventanas con esquinas redondeadas (picom), tema GTK oscuro con acento rojo, iconos Papirus con carpetas rojas,
-  fuente JetBrainsMono Nerd Font.
-- **Terminal**: paleta roja/negra, prompt de dos líneas con usuario, carpeta, rama git y código de error,
-  `neofetch` con la calavera al abrir.
+- **Escritorio Hyprland**: ventanas con esquinas redondeadas, bordes rojos animados, desenfoque y
+  transparencia; barra flotante (Waybar) con escritorios tipo pastilla, reloj y calendario, multimedia, CPU/RAM,
+  red, Bluetooth, volumen, brillo, batería, notificaciones y menú de energía; lanzador Wofi; centro de
+  notificaciones (SwayNC) con volumen, brillo y reproductor; bloqueo con Hyprlock; capturas de pantalla;
+  tema GTK oscuro con acento rojo, iconos Papirus con carpetas rojas, fuente JetBrainsMono Nerd Font.
+- **Terminal** (Kitty translúcida): paleta roja/negra, prompt de dos líneas con usuario, carpeta, rama git y
+  código de error, `fastfetch` con la calavera al abrir.
+
+### Atajos principales (Super = tecla Windows, `Super + F1` muestra todos)
+
+| Atajo | Acción |
+|---|---|
+| Super + Espacio | Aplicaciones |
+| Super + Enter | Terminal |
+| Super + E / B | Archivos / Navegador |
+| Super + Q | Cerrar ventana |
+| Super + 1…6 | Escritorios |
+| Super + N | Centro de notificaciones |
+| Super + L | Bloquear |
+| Super + Shift + E | Menú de energía |
+| Impr Pant | Captura de área |
+| Super + Shift + W | Cambiar fondo |
 - **Software**: Firefox ESR, Thunar, Mousepad, Ristretto, VLC, gestor de archivos comprimidos, GParted,
   Discos, Synaptic, impresoras, Wi-Fi/Bluetooth, PipeWire. Actualizaciones de seguridad de Debian
   (`update` en la terminal = `sudo apt update && sudo apt full-upgrade`).
@@ -63,12 +79,12 @@ Si pierdes la llave, entra en **Modo Seguro** y ejecuta `sudo crackos-usbkey dis
 
 ## Compilar tú mismo
 
-En Debian 12 (o cualquier Linux con Docker):
+En Debian 13 (o cualquier Linux con Docker):
 
 ```bash
-sudo ./build.sh                                     # en Debian 12
+sudo ./build.sh                                     # en Debian 13
 # o
-sudo docker run --rm --privileged -v "$PWD":/build -w /build debian:bookworm ./build.sh
+sudo docker run --rm --privileged -v "$PWD":/build -w /build debian:trixie ./build.sh
 ```
 
 Los gráficos se regeneran desde el video con `python3 tools/make_assets.py` (ffmpeg + Pillow).
@@ -77,7 +93,7 @@ La pantalla de acceso se puede previsualizar sin SDDM con `python3 tools/preview
 ## Estructura
 
 ```
-auto/config                     opciones de live-build (Debian 12, amd64, ISO híbrida UEFI+BIOS)
+auto/config                     opciones de live-build (Debian 13, amd64, ISO híbrida UEFI+BIOS)
 build.sh                        compila la ISO
 config/package-lists/           paquetes del sistema
 config/hooks/normal/            personalización durante la compilación
@@ -92,4 +108,4 @@ assets/                         video original y fuentes
 tools/                          generadores de gráficos y vista previa
 ```
 
-Licencias: fuentes JetBrains Mono (OFL), tema Matcha (GPL-3.0), Papirus (GPL-3.0), Debian y sus paquetes según sus licencias.
+Licencias: fuentes JetBrains Mono (OFL), tema Matcha (GPL-3.0), Papirus (GPL-3.0), Hyprland (BSD-3), Debian y sus paquetes según sus licencias.

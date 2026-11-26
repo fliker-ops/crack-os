@@ -161,6 +161,18 @@ def main():
         wp = INC / "usr/share/backgrounds/crackos"; wp.mkdir(parents=True, exist_ok=True)
         wallpaper(fr).save(wp / "crackos-wallpaper.png")
         wallpaper(fr, safe=True).save(wp / "crackos-wallpaper-safe.png")
+        # variantes para Super+Shift+W
+        dark = Image.new("RGBA", (1920, 1080), (0, 0, 0, 255))
+        g = Image.fromarray((radial_mask(1920, 1080, 0.0, 1.1)[..., 0] * 60).astype(np.uint8))
+        dark.paste(Image.new("RGBA", (1920, 1080), (90, 6, 14, 255)), (0, 0), g)
+        sk = fr.crop((740, 160, 1180, 620)).resize((330, 345), Image.LANCZOS)
+        skm = Image.fromarray((radial_mask(330, 345)[..., 0] * 255).astype(np.uint8))
+        dark.paste(sk, (1920 - 330 - 140, 1080 - 345 - 110), skm)
+        dark.convert("RGB").save(wp / "crackos-oscuro.png")
+        rain = clean_frame(fr)
+        rain.paste(rain.crop((40, 150, 480, 630)).copy(), (740, 150))
+        paste_center(rain, title(46, soft=True), 960, 1010)
+        rain.convert("RGB").save(wp / "crackos-lluvia.png")
         # fondo de login: mismo fondo, algo mas oscuro
         lg = clean_frame(fr)
         lg.paste(lg.crop((40, 150, 480, 630)).copy(), (740, 150))   # solo lluvia, sin calavera

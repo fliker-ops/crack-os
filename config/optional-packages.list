@@ -1,0 +1,15 @@
+# Paquetes deseables: build.sh incluye solo los que existan en el repositorio de Debian.
+hyprlock
+hypridle
+hyprpaper
+hyprcursor-util
+wlogout
+nwg-look
+cliphist
+swayosd
+cmatrix
+qml6-module-qtquick
+qml6-module-qtquick-window
+qt6-wayland
+qtwayland5
+fonts-wqy-microhei

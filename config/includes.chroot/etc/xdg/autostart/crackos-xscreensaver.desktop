@@ -1,6 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Bloqueo de pantalla
-Exec=xscreensaver -no-splash
-OnlyShowIn=XFCE;
-NoDisplay=true

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Crack OS: bloquea la pantalla (hyprlock si existe, si no swaylock)
+pgrep -x hyprlock >/dev/null && exit 0
+if command -v hyprlock >/dev/null; then exec hyprlock; fi
+exec swaylock -f -i /usr/share/backgrounds/crackos/crackos-login.png -s fill \
+    --inside-color 0e080acc --ring-color ff2832ff --key-hl-color ffffffff --line-color 00000000 \
+    --text-color ffffffff --inside-ver-color 0e080acc --ring-ver-color ffb547ff \
+    --inside-wrong-color 0e080acc --ring-wrong-color ff2832ff --indicator-radius 90

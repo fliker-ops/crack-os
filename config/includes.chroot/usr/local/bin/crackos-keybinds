@@ -1,0 +1,24 @@
+#!/bin/bash
+# Crack OS: muestra los atajos de teclado
+pkill wofi && exit 0
+cat <<'TXT' | wofi --dmenu --prompt "Atajos de teclado (Super = tecla Windows)" --width 640 --height 560 --cache-file /dev/null >/dev/null
+Super + Espacio        Aplicaciones
+Super + Enter          Terminal
+Super + E              Archivos
+Super + B              Navegador
+Super + Q              Cerrar ventana
+Super + F              Pantalla completa
+Super + V              Ventana flotante / fija
+Super + Flechas        Mover el foco
+Super + Shift + Flechas  Mover la ventana
+Super + 1..6           Ir al escritorio
+Super + Shift + 1..6   Enviar ventana al escritorio
+Ctrl + Alt + ←/→       Escritorio anterior / siguiente
+Super + arrastrar      Mover (clic izq.) / redimensionar (clic der.)
+Super + N              Centro de notificaciones
+Super + L              Bloquear
+Super + Shift + E      Apagar / reiniciar / cerrar sesión
+Impr Pant              Captura de un área (Shift: pantalla completa)
+Super + Shift + W      Cambiar fondo de pantalla
+Super + F1             Esta ayuda
+TXT

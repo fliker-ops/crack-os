@@ -28,10 +28,10 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - name: Compilar en Debian 12 (live-build)
+      - name: Compilar en Debian 13 (live-build)
         run: |
           sudo docker run --rm --privileged \
-            -v "$PWD":/build -w /build debian:bookworm \
+            -v "$PWD":/build -w /build debian:trixie \
             bash -c "./build.sh"
 
       - name: Subir registro de compilacion

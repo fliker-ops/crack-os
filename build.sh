@@ -1,5 +1,5 @@
 #!/bin/bash
-# Crack OS - compila la ISO. Requiere Debian 12 (o un contenedor debian:bookworm) y root.
+# Crack OS - compila la ISO. Requiere Debian 13 "trixie" (o un contenedor debian:trixie) y root.
 #   sudo ./build.sh
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -35,6 +35,17 @@ if [ ! -x "$INC/usr/local/bin/papirus-folders" ]; then
     fi
     rm -rf "$tmp"
 fi
+
+echo "==> Paquetes opcionales disponibles en Debian"
+: > config/package-lists/optional.list.chroot
+grep -v '^\s*#' config/optional-packages.list | while read -r p; do
+    [ -n "$p" ] || continue
+    if apt-cache policy "$p" 2>/dev/null | grep -q 'Candidate: [0-9]'; then
+        echo "$p" >> config/package-lists/optional.list.chroot; echo "  + $p"
+    else
+        echo "  - $p (no disponible)"
+    fi
+done
 
 echo "==> Configurando live-build"
 lb clean --purge >/dev/null 2>&1 || true

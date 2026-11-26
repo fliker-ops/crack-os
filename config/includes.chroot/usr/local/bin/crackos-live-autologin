@@ -3,8 +3,8 @@
 U=crack
 for a in $(cat /proc/cmdline); do case "$a" in username=*) U="${a#username=}" ;; esac; done
 mkdir -p /etc/sddm.conf.d
-printf '[Autologin]\nUser=%s\nSession=xfce.desktop\nRelogin=false\n' "$U" > /etc/sddm.conf.d/20-live-autologin.conf
+printf '[Autologin]\nUser=%s\nSession=hyprland.desktop\nRelogin=false\n' "$U" > /etc/sddm.conf.d/20-live-autologin.conf
 # live-config puede escribir /etc/sddm.conf (tiene prioridad) con la sesion de Plasma
 if [ -f /etc/sddm.conf ]; then
-    sed -i -e 's/^Session=.*/Session=xfce.desktop/' -e "s/^User=.*/User=$U/" /etc/sddm.conf
+    sed -i -e 's/^Session=.*/Session=hyprland.desktop/' -e "s/^User=.*/User=$U/" /etc/sddm.conf
 fi

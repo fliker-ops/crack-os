@@ -1,0 +1,8 @@
+#!/bin/bash
+# Crack OS: capturas de pantalla (area | full). Se guardan en Imagenes/Capturas y se copian al portapapeles.
+dir="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Imágenes")/Capturas"
+mkdir -p "$dir"; f="$dir/captura-$(date +%Y%m%d-%H%M%S).png"
+if [ "${1:-area}" = full ]; then grim "$f"; else g=$(slurp) || exit 0; grim -g "$g" "$f"; fi
+[ -f "$f" ] || exit 1
+wl-copy < "$f"
+notify-send -i "$f" "Captura guardada" "$(basename "$f") · copiada al portapapeles"

@@ -1,4 +1,5 @@
 # ===== Base del sistema =====
+# (los paquetes opcionales que pueden no existir van en config/optional-packages.list)
 linux-image-amd64
 firmware-linux
 firmware-linux-nonfree
@@ -48,23 +49,34 @@ os-prober
 calamares
 calamares-settings-debian
 
-# ===== Escritorio =====
-xorg
+# ===== Escritorio (Hyprland) =====
+hyprland
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xwayland
+waybar
+wofi
+kitty
+swaybg
+swayidle
+swaylock
+sway-notification-center
+grim
+slurp
+wl-clipboard
+brightnessctl
+playerctl
+pamixer
+libnotify-bin
+mate-polkit
+dconf-cli
+sddm
+xserver-xorg-core
 xserver-xorg-video-all
 xserver-xorg-input-all
-sddm
+xauth
 qml-module-qtquick2
 qml-module-qtquick-window2
-xfce4
-xfce4-terminal
-xfce4-whiskermenu-plugin
-xfce4-pulseaudio-plugin
-xfce4-power-manager
-xfce4-power-manager-plugins
-xfce4-notifyd
-xfce4-screenshooter
-xfce4-taskmanager
-xfce4-clipman-plugin
 thunar
 thunar-archive-plugin
 thunar-volman
@@ -73,15 +85,18 @@ tumbler
 file-roller
 mousepad
 ristretto
-picom
-x11-xserver-utils
-libnotify-bin
 papirus-icon-theme
+adwaita-icon-theme
 gtk2-engines-murrine
-gtk2-engines-pixbuf
+gnome-themes-extra
 fonts-noto-color-emoji
-fonts-wqy-microhei
+fonts-noto-core
 fonts-dejavu
+fastfetch
+btop
+cava
+jq
+x11-xserver-utils
 
 # ===== Red, sonido, energia =====
 network-manager
@@ -94,9 +109,6 @@ bluez
 blueman
 cups
 system-config-printer
-policykit-1-gnome
-xscreensaver
-xscreensaver-data
 
 # ===== Aplicaciones =====
 firefox-esr
@@ -105,4 +117,3 @@ vlc
 gnome-disk-utility
 gparted
 synaptic
-neofetch

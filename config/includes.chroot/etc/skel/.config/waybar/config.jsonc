@@ -1,0 +1,120 @@
+// Crack OS - barra superior flotante
+{
+    "layer": "top",
+    "position": "top",
+    "height": 38,
+    "margin-top": 10,
+    "margin-left": 14,
+    "margin-right": 14,
+    "spacing": 8,
+    "reload_style_on_change": true,
+
+    "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock", "mpris"],
+    "modules-right": ["tray", "cpu", "memory", "network", "bluetooth", "pulseaudio", "backlight", "battery", "custom/notification", "custom/power"],
+
+    "custom/launcher": {
+        "format": "󰚌",
+        "tooltip-format": "Aplicaciones (Super + Espacio)",
+        "on-click": "pkill wofi || wofi --show drun",
+        "on-click-right": "crackos-keybinds"
+    },
+    "hyprland/workspaces": {
+        "format": "{icon}",
+        "format-icons": { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "default": "", "urgent": "" },
+        "persistent-workspaces": { "*": 5 },
+        "on-scroll-up": "hyprctl dispatch workspace e+1",
+        "on-scroll-down": "hyprctl dispatch workspace e-1"
+    },
+    "hyprland/window": {
+        "format": "{}",
+        "max-length": 40,
+        "separate-outputs": true,
+        "rewrite": { "": "crack os" }
+    },
+    "clock": {
+        "format": "  {:%H:%M}",
+        "format-alt": "  {:%A %d %B}",
+        "tooltip-format": "<tt><small>{calendar}</small></tt>",
+        "calendar": {
+            "mode": "month",
+            "format": { "today": "<span color='#ff2832'><b>{}</b></span>" }
+        },
+        "locale": "es_ES.UTF-8"
+    },
+    "mpris": {
+        "format": "{status_icon}  {title}",
+        "format-paused": "{status_icon}  {title}",
+        "status-icons": { "playing": "󰐊", "paused": "󰏤", "stopped": "󰓛" },
+        "max-length": 34,
+        "on-click": "playerctl play-pause"
+    },
+    "tray": { "icon-size": 16, "spacing": 10 },
+    "cpu": {
+        "format": "  {usage}%",
+        "interval": 3,
+        "on-click": "kitty --class crackos-float -e btop"
+    },
+    "memory": {
+        "format": "  {percentage}%",
+        "interval": 5,
+        "tooltip-format": "{used:0.1f} GiB / {total:0.1f} GiB",
+        "on-click": "kitty --class crackos-float -e btop"
+    },
+    "network": {
+        "format-wifi": "  {essid}",
+        "format-ethernet": "󰈀  cable",
+        "format-disconnected": "󰤭  sin red",
+        "tooltip-format": "{ifname} · {ipaddr}",
+        "max-length": 22,
+        "on-click": "nm-connection-editor"
+    },
+    "bluetooth": {
+        "format": "",
+        "format-connected": "  {device_alias}",
+        "format-disabled": "",
+        "format-off": "",
+        "on-click": "blueman-manager"
+    },
+    "pulseaudio": {
+        "format": "{icon}  {volume}%",
+        "format-muted": "  mudo",
+        "format-icons": { "default": ["", "", ""] },
+        "on-click": "pavucontrol",
+        "on-click-right": "crackos-osd volume mute",
+        "on-scroll-up": "crackos-osd volume up",
+        "on-scroll-down": "crackos-osd volume down"
+    },
+    "backlight": {
+        "format": "{icon}  {percent}%",
+        "format-icons": ["󰃞", "󰃟", "󰃠"],
+        "on-scroll-up": "crackos-osd brightness up",
+        "on-scroll-down": "crackos-osd brightness down"
+    },
+    "battery": {
+        "states": { "warning": 25, "critical": 12 },
+        "format": "{icon}  {capacity}%",
+        "format-charging": "󰂄  {capacity}%",
+        "format-icons": ["󰁺", "󰁼", "󰁾", "󰂀", "󰁹"]
+    },
+    "custom/notification": {
+        "tooltip": false,
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "󱅫", "none": "󰂚", "dnd-notification": "󰂛", "dnd-none": "󰂛",
+            "inhibited-notification": "󱅫", "inhibited-none": "󰂚",
+            "dnd-inhibited-notification": "󰂛", "dnd-inhibited-none": "󰂛"
+        },
+        "return-type": "json",
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw",
+        "escape": true
+    },
+    "custom/power": {
+        "format": "⏻",
+        "tooltip-format": "Apagar, reiniciar, bloquear...",
+        "on-click": "crackos-power"
+    }
+}

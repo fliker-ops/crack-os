@@ -1,9 +1,9 @@
 #!/bin/sh
-# Crack OS - configuracion de live-build (Debian 12 "bookworm", estable)
+# Crack OS - configuracion de live-build (Debian 13 "trixie", estable)
 set -e
 lb config noauto \
     --mode debian \
-    --distribution bookworm \
+    --distribution trixie \
     --architectures amd64 \
     --linux-flavours amd64 \
     --archive-areas "main contrib non-free non-free-firmware" \

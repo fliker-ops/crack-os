@@ -1,0 +1,26 @@
+/* Crack OS - lanzador */
+* { font-family: "JetBrainsMono Nerd Font", sans-serif; font-size: 14px; }
+window {
+    background-color: rgba(14, 8, 10, 0.82);
+    border: 2px solid rgba(255, 40, 50, 0.55);
+    border-radius: 18px;
+}
+#outer-box { padding: 18px; }
+#input {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    border: 1px solid rgba(255, 40, 50, 0.35);
+    border-radius: 14px;
+    padding: 10px 16px;
+    margin-bottom: 14px;
+}
+#input:focus { border-color: #ff2832; box-shadow: none; }
+#scroll { margin: 0; }
+#entry { padding: 9px 12px; border-radius: 12px; margin: 2px 0; }
+#entry:selected {
+    background: linear-gradient(90deg, rgba(255, 40, 50, 0.85), rgba(255, 90, 60, 0.55));
+    border: none;
+    outline: none;
+}
+#text { color: #e9dfe0; margin-left: 10px; }
+#text:selected { color: #ffffff; font-weight: bold; }
