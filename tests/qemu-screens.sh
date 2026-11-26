@@ -22,8 +22,10 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     if [ "$mode" = bios ]; then
         mkdir -p /tmp/rec
         ( n=0; while kill -0 $pid 2>/dev/null; do
-              echo "screendump -f png /tmp/rec/$(printf %05d $n).png" | socat - "UNIX-CONNECT:$sock.rec" >/dev/null 2>&1
-              n=$((n+1)); sleep 0.25; done ) &
+              f=/tmp/rec/$(printf %05d $n)
+              echo "screendump $f.ppm" | socat - "UNIX-CONNECT:$sock.rec" >/dev/null 2>&1
+              sleep 0.3; ( convert "$f.ppm" -resize 1280x "$f.jpg" 2>/dev/null; rm -f "$f.ppm" ) &
+              n=$((n+1)); done ) &
         REC=$!
     fi
     sleep 4; shot "$sock" "$mode-00-menu"
@@ -31,12 +33,13 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     local last=4
     for t in "$@"; do sleep $((t - last)); last=$t; shot "$sock" "$mode-$(printf %03d "$t")s"; done
     if [ "$mode" = bios ]; then
-        type() { local w="$1" i c; for ((i=0; i<${#w}; i++)); do c="${w:i:1}"; case "$c" in " ") c=spc ;; "-") c=slash ;; esac; key "$sock" "$c"; sleep 0.12; done; key "$sock" ret; }
+        type() { local w="$1" i c; for ((i=0; i<${#w}; i++)); do c="${w:i:1}"; case "$c" in " ") c=spc ;; "-") c=slash ;; [A-Z]) c="shift-${c,,}" ;; esac; key "$sock" "$c"; sleep 0.12; done; key "$sock" ret; }
         # si aparece la pantalla de acceso, entra con la clave del Live ("live")
         type live
         sleep 30; shot "$sock" "bios-89-escritorio"
         key "$sock" meta_l-ret; sleep 8; shot "$sock" "bios-90-terminal"
         type crackdiag; sleep 4; shot "$sock" "bios-93-diagnostico"
+        type "sudo crackdiag serie"; sleep 3
         type "crackos-usbkey status"; sleep 3
         key "$sock" meta_l-spc; sleep 4; shot "$sock" "bios-91-aplicaciones"
         key "$sock" esc; sleep 2
@@ -58,8 +61,8 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
     fi
     kill $pid 2>/dev/null; wait $pid 2>/dev/null
     if [ "$mode" = bios ] && [ -n "${REC:-}" ]; then
-        wait $REC 2>/dev/null
-        ffmpeg -v error -y -framerate 4 -pattern_type glob -i '/tmp/rec/*.png' \
+        wait $REC 2>/dev/null; sleep 3; ls /tmp/rec | wc -l
+        ffmpeg -v error -y -framerate 3 -pattern_type glob -i '/tmp/rec/*.jpg' \
             -vf "scale=1280:-2" -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p "$OUT/recorrido.mp4" \
             && echo "video: $(du -h "$OUT/recorrido.mp4" | cut -f1)"
     fi

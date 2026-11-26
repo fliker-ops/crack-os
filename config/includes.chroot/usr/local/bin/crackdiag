@@ -7,3 +7,15 @@ echo "== procesos: $(for p in waybar swaync swaybg nm-applet swayidle; do pgrep 
 echo "== tema gtk: $(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null)"
 echo "== modo seguro: $([ -f /etc/crackos/safe-mode-active ] && echo SI || echo no)  llave usb: $(. /etc/crackos/usbkey.conf; echo $ENABLED)"
 tail -3 ~/.cache/crackos-session.log 2>/dev/null
+# "sudo crackdiag serie": vuelca registros de arranque al puerto serie (pruebas en QEMU)
+if [ "${1:-}" = serie ] && [ -w /dev/ttyS0 ]; then
+    {
+        echo "===== CRACKDIAG SERIE ====="
+        for f in /etc/sddm.conf /etc/sddm.conf.d/* /usr/lib/sddm/sddm.conf.d/*; do [ -f "$f" ] && { echo "--- $f"; cat "$f"; }; done
+        ls /usr/bin/ | grep -i sddm
+        systemctl status crackos-live-autologin.service --no-pager 2>&1 | head -12
+        journalctl -b --no-pager 2>/dev/null | grep -iE "sddm|greeter|qml|autologin" | tail -80
+        for f in /var/lib/sddm/.local/share/sddm/*.log; do [ -f "$f" ] && { echo "--- $f"; tail -40 "$f"; }; done
+        echo "===== FIN ====="
+    } > /dev/ttyS0 2>&1
+fi

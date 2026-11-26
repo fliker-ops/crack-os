@@ -21,7 +21,7 @@
     },
     "hyprland/workspaces": {
         "format": "{icon}",
-        "format-icons": { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "default": "", "urgent": "" },
+        "format-icons": { "1": "一", "2": "二", "3": "三", "4": "四", "5": "五", "6": "六", "default": "󰝦", "urgent": "󰀦" },
         "persistent-workspaces": { "*": 5 },
         "on-scroll-up": "hyprctl dispatch workspace e+1",
         "on-scroll-down": "hyprctl dispatch workspace e-1"
@@ -33,8 +33,8 @@
         "rewrite": { "": "crack os" }
     },
     "clock": {
-        "format": "  {:%H:%M}",
-        "format-alt": "  {:%A %d %B}",
+        "format": "󰥔  {:%H:%M}",
+        "format-alt": "󰃭  {:%A %d %B}",
         "tooltip-format": "<tt><small>{calendar}</small></tt>",
         "calendar": {
             "mode": "month",
@@ -51,18 +51,18 @@
     },
     "tray": { "icon-size": 16, "spacing": 10 },
     "cpu": {
-        "format": "  {usage}%",
+        "format": "󰍛  {usage}%",
         "interval": 3,
         "on-click": "kitty --class crackos-float -e btop"
     },
     "memory": {
-        "format": "  {percentage}%",
+        "format": "󰘚  {percentage}%",
         "interval": 5,
         "tooltip-format": "{used:0.1f} GiB / {total:0.1f} GiB",
         "on-click": "kitty --class crackos-float -e btop"
     },
     "network": {
-        "format-wifi": "  {essid}",
+        "format-wifi": "󰤨  {essid}",
         "format-ethernet": "󰈀  cable",
         "format-disconnected": "󰤭  sin red",
         "tooltip-format": "{ifname} · {ipaddr}",
@@ -70,16 +70,16 @@
         "on-click": "nm-connection-editor"
     },
     "bluetooth": {
-        "format": "",
-        "format-connected": "  {device_alias}",
-        "format-disabled": "",
-        "format-off": "",
+        "format": "󰂯",
+        "format-connected": "󰂱  {device_alias}",
+        "format-disabled": "󰂲",
+        "format-off": "󰂲",
         "on-click": "blueman-manager"
     },
     "pulseaudio": {
         "format": "{icon}  {volume}%",
-        "format-muted": "  mudo",
-        "format-icons": { "default": ["", "", ""] },
+        "format-muted": "󰝟  mudo",
+        "format-icons": { "default": ["󰕿", "󰖀", "󰕾"] },
         "on-click": "pavucontrol",
         "on-click-right": "crackos-osd volume mute",
         "on-scroll-up": "crackos-osd volume up",
