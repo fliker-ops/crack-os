@@ -10,13 +10,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm -v "$PWD":/w debian:trixie bash -c '
+          docker run --rm --privileged -v "$PWD":/w debian:trixie bash -c '
             echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list
             apt-get update -qq >/dev/null 2>&1
             apt-get install -y -qq -t trixie-backports hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
-            Hyprland --version | head -3; apt list --installed 2>/dev/null | grep -c bpo13; apt list --installed 2>/dev/null | grep bpo13 | cut -d/ -f1 | tr "\n" " "
+            Hyprland --version | head -3; true
             echo "===== CONFIG POR DEFECTO ====="
-            cat /usr/share/hypr/hyprland.conf
+            dpkg -L hyprland | grep -iE "\.conf$" ; cat $(dpkg -L hyprland | grep -E "hyprland\.conf$" | head -1)
             echo "===== VERIFICAR CRACK OS ====="
             mkdir -p /usr/share/crackos && cp -r /w/config/includes.chroot/usr/share/crackos/hypr /usr/share/crackos/
             Hyprland --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
