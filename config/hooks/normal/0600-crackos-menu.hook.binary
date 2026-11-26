@@ -6,7 +6,7 @@ for f in boot/grub/*.cfg isolinux/*.cfg; do
     sed -i -e 's/Live system (\([a-z0-9-]*\) fail-safe mode)/Crack OS  \/\/  Modo compatibilidad/g' \
            -e 's/Live system (\([a-z0-9-]*\))/Crack OS  \/\/  Live (nada se guarda)/g' \
            -e 's/Live system/Crack OS Live/g' \
-           -e 's/Utilities\.\.\./Utilidades.../g' -e 's/"Utilities"/"Utilidades"/g' \
+           -e 's/Utilities\.\.\./Utilidades.../g' -e 's/"Utilities"/"Utilidades"/g' -e 's/^\(\s*menu label \)Utilities/\1Utilidades/' -e 's/^\(\s*menu begin.*\)Utilities/\1Utilidades/' \
            -e 's/menu title Boot menu/menu title Menu de arranque/' \
            -e 's/Hardware Detection Tool (HDT)/Deteccion de hardware (HDT)/' "$f"
 done
