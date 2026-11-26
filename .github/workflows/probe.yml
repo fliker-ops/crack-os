@@ -1,0 +1,18 @@
+name: Sondeo de paquetes
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        image: ["debian:trixie", "debian:trixie-backports", "debian:sid"]
+    steps:
+      - run: |
+          img="${{ matrix.image }}"
+          extra=""
+          if [ "$img" = "debian:trixie-backports" ]; then img=debian:trixie; extra='echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list;'; fi
+          docker run --rm $img bash -c "$extra apt-get update -qq >/dev/null 2>&1; for p in hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland waybar wofi cmatrix wlogout nwg-look cliphist swayosd qml6-module-qtquick fonts-wqy-microhei sddm wayfire niri swayfx; do printf '%-28s %s\n' \$p \"\$(apt-cache policy \$p 2>/dev/null | awk '/Candidate/{print \$2}')\"; done; apt-cache policy | head -20"
