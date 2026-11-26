@@ -1,0 +1,15 @@
+[Unit]
+Description=Crack OS Remote (control desde la app Crack Remote del telefono)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/lib/crackos/remote/crackos-remote.py
+Restart=on-failure
+RestartSec=3
+StateDirectory=crackos-remote
+StateDirectoryMode=0700
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,19 @@
+#!/bin/bash
+# Crack OS Remote: estado y control del agente para la app del telefono
+#   crackos-remote          muestra la IP para conectar el telefono
+#   crackos-remote on|off   activa o desactiva el control remoto
+#   crackos-remote salir    cierra todas las sesiones de telefonos
+CONF=/etc/crackos/remote.conf
+PORT=$(awk -F= '/^ *port/{gsub(/ /,"",$2);print $2}' "$CONF" 2>/dev/null); PORT=${PORT:-4747}
+R=$'\e[38;2;255;40;50m'; B=$'\e[1m'; N=$'\e[0m'
+case "$1" in
+  on)  sudo sed -i 's/^ *enabled *=.*/enabled = yes/' "$CONF"; sudo systemctl enable --now crackos-remote; sudo systemctl restart crackos-remote; echo "Control remoto ACTIVADO" ;;
+  off) sudo sed -i 's/^ *enabled *=.*/enabled = no/' "$CONF"; sudo systemctl disable --now crackos-remote; echo "Control remoto DESACTIVADO" ;;
+  salir) sudo rm -f /var/lib/crackos-remote/sessions.json; sudo systemctl restart crackos-remote; echo "Se cerraron las sesiones de todos los teléfonos" ;;
+  *)
+    echo "${R}${B}  CRACK OS REMOTE${N}"
+    if systemctl is-active --quiet crackos-remote; then echo "  estado: ${B}activo${N}"; else echo "  estado: ${R}apagado${N} (sudo crackos-remote on)"; fi
+    echo "  En la app Crack Remote toca tu PC o escribe una de estas IP:"
+    ip -4 -o addr show scope global | awk -v p="$PORT" -v r="$R" -v n="$N" '{split($4,a,"/"); printf "    %s%s%s:%s   (%s)\n", r, a[1], n, p, $2}'
+    ;;
+esac

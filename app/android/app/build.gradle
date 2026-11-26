@@ -1,0 +1,30 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'os.crackos.remote'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'os.crackos.remote'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+    signingConfigs {
+        // llave de firma propia de la app (permite instalar actualizaciones encima)
+        crack {
+            storeFile file('../crackremote.keystore')
+            storePassword 'crackremote'
+            keyAlias 'crackremote'
+            keyPassword 'crackremote'
+        }
+    }
+    buildTypes {
+        release { minifyEnabled false; signingConfig signingConfigs.crack }
+        debug { signingConfig signingConfigs.crack }
+    }
+    sourceSets { main { assets.srcDirs = ['../../web'] } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+
+dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
