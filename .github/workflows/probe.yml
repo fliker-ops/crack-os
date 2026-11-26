@@ -14,9 +14,10 @@ jobs:
             echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list
             apt-get update -qq >/dev/null 2>&1
             apt-get install -y -qq -t trixie-backports hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
-            Hyprland --version | head -3; true
+            export XDG_RUNTIME_DIR=/tmp/xdg; mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR
+            Hyprland --version | head -3
             echo "===== CONFIG POR DEFECTO ====="
-            dpkg -L hyprland | grep -iE "\.conf$" ; cat $(dpkg -L hyprland | grep -E "hyprland\.conf$" | head -1)
+            f=$(find /usr/share -name "hyprland.conf*" | head -1); echo "$f"; zcat -f "$f"
             echo "===== VERIFICAR CRACK OS ====="
             mkdir -p /usr/share/crackos && cp -r /w/config/includes.chroot/usr/share/crackos/hypr /usr/share/crackos/
             Hyprland --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
