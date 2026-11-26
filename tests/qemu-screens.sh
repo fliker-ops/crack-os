@@ -29,10 +29,10 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         sleep 25; shot "$sock" "bios-89-escritorio"
         key "$sock" ctrl-alt-t; sleep 8; shot "$sock" "bios-90-terminal"
         key "$sock" alt-f4; sleep 2
-        echo "mouse_move 22 30" | socat - "UNIX-CONNECT:$sock" >/dev/null 2>&1
-        echo "mouse_button 1" | socat - "UNIX-CONNECT:$sock" >/dev/null 2>&1; sleep 0.2
-        echo "mouse_button 0" | socat - "UNIX-CONNECT:$sock" >/dev/null 2>&1; sleep 3
-        shot "$sock" "bios-91-menu"
+        key "$sock" ctrl-esc; sleep 4; shot "$sock" "bios-91-menu-aplicaciones"
+        key "$sock" esc; sleep 2
+        key "$sock" meta_l-e; sleep 8; shot "$sock" "bios-92-archivos"
+        key "$sock" alt-f4; sleep 2
     fi
     kill $pid 2>/dev/null; wait $pid 2>/dev/null
 }
