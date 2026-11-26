@@ -1,0 +1,69 @@
+===== CRACKDIAG SERIE =====
+--- /etc/sddm.conf
+[Autologin]
+User=crack
+Session=hyprland.desktop
+--- /etc/sddm.conf.d/10-crackos.conf
+[Theme]
+Current=crackos
+CursorTheme=Adwaita
+Font=JetBrainsMono Nerd Font,11
+
+[Users]
+MaximumUid=60000
+MinimumUid=1000
+RememberLastUser=true
+RememberLastSession=true
+
+[General]
+Numlock=on
+--- /etc/sddm.conf.d/20-live-autologin.conf
+[Autologin]
+User=crack
+Session=hyprland.desktop
+Relogin=false
+sddm
+sddm-greeter-qt6
+○ crackos-live-autologin.service - Crack OS Live: inicio de sesion automatico
+     Loaded: loaded (/etc/systemd/system/crackos-live-autologin.service; enabled; preset: enabled)
+     Active: inactive (dead) since Wed 2026-11-25 21:43:24 CST; 1min 23s ago
+ Invocation: 42e7b58e69804ce3a0d188dcc593d4a1
+    Process: 1291 ExecStart=/usr/local/bin/crackos-live-autologin (code=exited, status=0/SUCCESS)
+   Main PID: 1291 (code=exited, status=0/SUCCESS)
+   Mem peak: 1.8M
+        CPU: 17ms
+
+nov 25 21:43:24 crackos systemd[1]: Starting crackos-live-autologin.service - Crack OS Live: inicio de sesion automatico...
+nov 25 21:43:24 crackos systemd[1]: crackos-live-autologin.service: Deactivated successfully.
+nov 25 21:43:24 crackos systemd[1]: Finished crackos-live-autologin.service - Crack OS Live: inicio de sesion automatico.
+nov 25 21:43:24 crackos live-config[654]:  sddm keyboard-configuration policykit ssl-cert util-linux login xserver-xorg.
+nov 25 21:43:24 crackos systemd[1]: Starting crackos-live-autologin.service - Crack OS Live: inicio de sesion automatico...
+nov 25 21:43:24 crackos systemd[1]: crackos-live-autologin.service: Deactivated successfully.
+nov 25 21:43:24 crackos systemd[1]: Finished crackos-live-autologin.service - Crack OS Live: inicio de sesion automatico.
+nov 25 21:43:25 crackos systemd[1]: Started sddm.service - Simple Desktop Display Manager.
+nov 25 21:43:25 crackos sddm[1370]: Initializing...
+nov 25 21:43:25 crackos sddm[1370]: Starting...
+nov 25 21:43:25 crackos sddm[1370]: Logind interface found
+nov 25 21:43:25 crackos sddm[1370]: Adding new display...
+nov 25 21:43:25 crackos sddm[1370]: Loaded empty theme configuration
+nov 25 21:43:25 crackos sddm[1370]: Xauthority path: "/run/sddm/xauth_uKWPfY"
+nov 25 21:43:25 crackos sddm[1370]: Using VT 2
+nov 25 21:43:25 crackos sddm[1370]: Reading from "/usr/local/share/wayland-sessions/hyprland.desktop"
+nov 25 21:43:25 crackos sddm[1370]: Reading from "/usr/share/wayland-sessions/hyprland.desktop"
+nov 25 21:43:25 crackos sddm[1370]: Session "/usr/share/wayland-sessions/hyprland.desktop" selected, command: "/usr/bin/start-hyprland" for VT 2
+nov 25 21:43:26 crackos sddm-helper[1374]: [PAM] Starting...
+nov 25 21:43:26 crackos sddm-helper[1374]: [PAM] Authenticating...
+nov 25 21:43:26 crackos sddm-helper[1374]: [PAM] returning.
+nov 25 21:43:26 crackos sddm[1370]: Authentication for user  "crack"  successful
+nov 25 21:43:26 crackos sddm-helper[1374]: pam_unix(sddm-autologin:session): session opened for user crack(uid=1000) by crack(uid=0)
+nov 25 21:43:26 crackos sddm-helper[1374]: Starting Wayland user session: "/etc/sddm/wayland-session" "/usr/bin/start-hyprland"
+nov 25 21:43:26 crackos sddm-helper[1405]: Jumping to VT 2
+nov 25 21:43:26 crackos sddm-helper[1405]: VT mode didn't need to be fixed
+nov 25 21:43:26 crackos sddm[1370]: Session started true
+nov 25 21:43:26 crackos sddm-helper[1374]: Failed to write utmpx:  No existe el fichero o el directorio
+===== FIN =====
+===== GREETER (offscreen) =====
+total 0
+drwxr-xr-x 3 root root  30 nov 25 21:13 .
+drwxr-xr-x 7 root root 106 nov 25 21:13 ..
+drwxr-xr-x 2 root root 132 nov 25 21:13 crackos
