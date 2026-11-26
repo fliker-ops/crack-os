@@ -77,6 +77,13 @@ for f in /etc/calamares/modules/bootloader.conf; do
     [ -f "$f" ] && sed -i 's/^efiBootloaderId:.*/efiBootloaderId: "debian"/' "$f"
 done
 
+# ---- Fondo por defecto del sistema (reemplaza el de Debian) ----
+update-alternatives --install /usr/share/images/desktop-base/desktop-background desktop-background \
+    /usr/share/backgrounds/crackos/crackos-wallpaper.png 100 || true
+update-alternatives --set desktop-background /usr/share/backgrounds/crackos/crackos-wallpaper.png || true
+mkdir -p /usr/share/images/desktop-base
+ln -sf /usr/share/backgrounds/crackos/crackos-wallpaper.png /usr/share/images/desktop-base/default
+
 # ---- Plymouth ----
 plymouth-set-default-theme crackos
 mkdir -p /etc/plymouth

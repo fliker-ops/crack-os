@@ -28,6 +28,8 @@ run() { # $1 modo (bios|uefi)  $2.. tiempos
         for k in l i v e ret; do key "$sock" $k; sleep 0.3; done
         sleep 25; shot "$sock" "bios-89-escritorio"
         key "$sock" ctrl-alt-t; sleep 8; shot "$sock" "bios-90-terminal"
+        for k in c l e a r ret c r a c k d i a g ret; do key "$sock" $k; sleep 0.2; done
+        sleep 4; shot "$sock" "bios-93-diagnostico"
         key "$sock" alt-f4; sleep 2
         key "$sock" ctrl-esc; sleep 4; shot "$sock" "bios-91-menu-aplicaciones"
         key "$sock" esc; sleep 2

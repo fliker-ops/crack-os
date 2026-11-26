@@ -1,15 +1,19 @@
 /* ===== Crack OS: panel tipo dock y botones pastilla (rojo / negro) ===== */
-.xfce4-panel {
+#XfcePanelWindow {
     background-color: #121214;
     border-radius: 14px;
-    border: 1px solid rgba(255, 40, 50, 0.25);
 }
-.xfce4-panel button { border-radius: 10px; }
-.xfce4-panel button:hover { background-color: rgba(255, 40, 50, 0.18); }
+#XfcePanelWindow button {
+    border: none;
+    box-shadow: none;
+    background-image: none;
+    background-color: transparent;
+    border-radius: 10px;
+}
+#XfcePanelWindow button:hover { background-color: rgba(255, 40, 50, 0.18); }
 
 /* Escritorios virtuales como pastillas */
-#pager-3 .xfce4-panel-toggle-button,
-#pager-3 button {
+#XfcePanelWindow #pager-3 button {
     font-family: "JetBrainsMono Nerd Font", "WenQuanYi Micro Hei";
     font-weight: bold;
     background-color: #232326;
@@ -20,12 +24,11 @@
     min-height: 18px;
     border: none;
 }
-#pager-3 button:checked,
-#pager-3 .xfce4-panel-toggle-button:checked {
+#XfcePanelWindow #pager-3 button:checked {
     background-color: #ff2832;
     color: #0a0a0a;
 }
-#pager-3 button:hover { background-color: rgba(255, 40, 50, 0.35); color: #ffffff; }
+#XfcePanelWindow #pager-3 button:hover { background-color: rgba(255, 40, 50, 0.35); color: #ffffff; }
 
 /* Reloj vertical */
 #clock-13 label { color: #f2f2f2; font-weight: bold; }
