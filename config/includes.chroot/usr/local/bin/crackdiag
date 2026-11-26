@@ -1,0 +1,8 @@
+#!/bin/bash
+# Crack OS: diagnostico rapido del escritorio
+echo "== escritorios: $(xfconf-query -c xfwm4 -p /general/workspace_count 2>&1) | $(xprop -root _NET_NUMBER_OF_DESKTOPS 2>/dev/null | awk '{print $3}')"
+echo "== monitores: $(xrandr --query 2>/dev/null | awk '/ connected/{printf $1" "}')"
+echo "== fondos:"; xfconf-query -c xfce4-desktop -l -v 2>/dev/null | grep last-image | head -4
+echo "== panel:"; xfconf-query -c xfce4-panel -p /plugins -l -v 2>/dev/null | grep -E 'plugin-[0-9]+ ' | tr '\n' ' '; echo
+echo "== crackos-session: $(ls -la /usr/local/bin/crackos-session | cut -c1-10) log:"; tail -5 ~/.cache/crackos-session.log 2>/dev/null
+echo "== errores panel:"; grep -iE "pager|panel|xfdesktop|wnck" ~/.xsession-errors 2>/dev/null | tail -6

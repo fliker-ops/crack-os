@@ -1,0 +1,82 @@
+#!/bin/bash
+# Crack OS - administra la llave USB que se pide para arrancar en modo normal.
+set -e
+CONF=/etc/crackos/usbkey.conf
+R=$'\e[1;31m'; W=$'\e[1;97m'; D=$'\e[0;90m'; N=$'\e[0m'
+
+need_root() { [ "$EUID" -eq 0 ] || { echo "${R}Ejecuta con sudo:${N} sudo crackos-usbkey $*"; exit 1; }; }
+setconf() { sed -i "s|^$1=.*|$1=$2|" "$CONF"; }
+. "$CONF"
+
+usage() {
+cat <<TXT
+${R}crackos-usbkey${N} - llave USB para arrancar Crack OS en modo normal
+
+  ${W}sudo crackos-usbkey create /dev/sdX1${N}  crea la llave en esa particion USB (no borra tus archivos)
+  ${W}sudo crackos-usbkey enable${N}            exige la llave en cada arranque normal
+  ${W}sudo crackos-usbkey disable${N}           deja de exigir la llave
+  ${W}sudo crackos-usbkey fallback safe|poweroff${N}  sin llave: modo seguro (por defecto) o apagar
+  ${W}sudo crackos-usbkey timeout SEGUNDOS${N}  tiempo de espera de la llave (por defecto 60)
+  ${W}crackos-usbkey status${N}                 muestra la configuracion
+
+${D}Si pierdes la llave: elige "Modo Seguro" en el menu de arranque, abre una terminal y ejecuta
+'sudo crackos-usbkey disable'. Los cambios del modo seguro se pierden, asi que en ese caso
+usa:  sudo crackos-usbkey disable --disk  (escribe directamente en el disco real).${N}
+TXT
+}
+
+conf_path() {
+    # en modo seguro, el disco real esta en /media/crack-disk
+    if [ "${1:-}" = "--disk" ] && [ -d /media/crack-disk/etc/crackos ]; then
+        mount -o remount,rw /media/crack-disk
+        echo /media/crack-disk/etc/crackos/usbkey.conf
+    else
+        echo "$CONF"
+    fi
+}
+
+case "${1:-}" in
+  create)
+    need_root create
+    dev="${2:-}"
+    [ -b "$dev" ] || { echo "${R}Indica la particion de la USB, por ejemplo /dev/sdb1${N}"; lsblk -o NAME,SIZE,TRAN,LABEL,MOUNTPOINT; exit 1; }
+    [ "$(lsblk -no TRAN "/dev/$(lsblk -no PKNAME "$dev")" 2>/dev/null)" = "usb" ] || {
+        read -rp "Ese dispositivo no parece USB. ¿Continuar? (s/N) " a; [ "$a" = "s" ] || exit 1; }
+    mnt=$(mktemp -d)
+    mount "$dev" "$mnt"
+    head -c 64 /dev/urandom > "$mnt/.crackos.key"
+    sync
+    h=$(sha256sum "$mnt/.crackos.key" | cut -d' ' -f1)
+    umount "$mnt"; rmdir "$mnt"
+    setconf KEY_HASH "\"$h\""
+    echo "${R}✔${N} Llave creada en ${W}$dev${N}. Activala con: ${W}sudo crackos-usbkey enable${N}"
+    ;;
+  enable)
+    need_root enable
+    [ -n "$KEY_HASH" ] || { echo "${R}Primero crea una llave:${N} sudo crackos-usbkey create /dev/sdX1"; exit 1; }
+    setconf ENABLED 1
+    echo "${R}✔${N} Desde el proximo arranque, el modo normal pedira la llave USB."
+    ;;
+  disable)
+    need_root disable
+    c=$(conf_path "${2:-}")
+    sed -i "s|^ENABLED=.*|ENABLED=0|" "$c"
+    echo "${R}✔${N} Llave USB desactivada ($c)."
+    ;;
+  fallback)
+    need_root fallback
+    case "${2:-}" in safe|poweroff) setconf FALLBACK "$2"; echo "Sin llave: $2" ;; *) usage; exit 1 ;; esac
+    ;;
+  timeout)
+    need_root timeout
+    [[ "${2:-}" =~ ^[0-9]+$ ]] || { usage; exit 1; }
+    setconf TIMEOUT "$2"; echo "Espera de la llave: $2 s"
+    ;;
+  status)
+    echo "Activada:  $([ "$ENABLED" = 1 ] && echo "${R}SI${N}" || echo NO)"
+    echo "Llave:     $([ -n "$KEY_HASH" ] && echo creada || echo "no creada")"
+    echo "Espera:    ${TIMEOUT}s"
+    echo "Sin llave: $FALLBACK"
+    ;;
+  *) usage ;;
+esac

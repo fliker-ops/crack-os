@@ -1,15 +1,15 @@
 # salidas de live-build
-.build/
-cache/
-chroot/
-binary/
-local/
+/.build/
+/cache/
+/chroot/
+/binary/
+/local/
 *.iso
 *.iso.sha256
 *.iso.part*
 build.log
-binary.*
-chroot.*
+/binary.*
+/chroot.*
 config/binary
 config/bootstrap
 config/chroot

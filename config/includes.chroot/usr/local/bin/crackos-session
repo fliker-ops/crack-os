@@ -1,0 +1,40 @@
+#!/bin/bash
+mkdir -p "$HOME/.cache"; exec >>"$HOME/.cache/crackos-session.log" 2>&1; echo "--- $(date)"
+# Crack OS: ajustes al iniciar sesion (fondo, compositor, aviso de modo seguro)
+SAFE=0
+[ -f /etc/crackos/safe-mode-active ] && SAFE=1
+WP=/usr/share/backgrounds/crackos/crackos-wallpaper.png
+[ "$SAFE" = 1 ] && WP=/usr/share/backgrounds/crackos/crackos-wallpaper-safe.png
+
+# Fondo en todos los monitores conectados (solo la primera vez, o siempre en modo seguro)
+set_wallpaper() {
+    for mon in $(xrandr --query 2>/dev/null | awk '/ connected/{print $1}'); do
+        for ws in 0 1 2 3 4 5; do
+            base="/backdrop/screen0/monitor${mon}/workspace${ws}"
+            xfconf-query -c xfce4-desktop -p "$base/last-image" -n -t string -s "$WP" 2>/dev/null
+            xfconf-query -c xfce4-desktop -p "$base/image-style" -n -t int -s 5 2>/dev/null
+        done
+    done
+    # cualquier otra ruta de fondo ya existente
+    xfconf-query -c xfce4-desktop -l 2>/dev/null | grep 'last-image$' | while read -r p; do
+        xfconf-query -c xfce4-desktop -p "$p" -s "$WP"
+    done
+}
+if [ "$SAFE" = 1 ] || [ ! -f "$HOME/.config/crackos/.wallpaper-set" ]; then
+    # xfdesktop puede arrancar despues que este script: se aplica dos veces
+    sleep 2; set_wallpaper
+    sleep 6; set_wallpaper
+    xfdesktop --reload 2>/dev/null
+    mkdir -p "$HOME/.config/crackos" && touch "$HOME/.config/crackos/.wallpaper-set"
+fi
+
+# Compositor con esquinas redondeadas y sombras
+if command -v picom >/dev/null && ! pgrep -u "$USER" -x picom >/dev/null; then
+    picom --daemon --config "$HOME/.config/picom/picom.conf" 2>/dev/null || \
+    picom --daemon --config /etc/xdg/picom.conf 2>/dev/null
+fi
+
+if [ "$SAFE" = 1 ]; then
+    notify-send -u critical -i crackos "MODO SEGURO ACTIVO" \
+      "Todo lo que hagas en esta sesión se borrará al reiniciar o apagar." 2>/dev/null
+fi
