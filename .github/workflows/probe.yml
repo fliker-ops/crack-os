@@ -3,22 +3,21 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['.github/workflows/probe.yml', 'config/includes.chroot/usr/share/crackos/hypr/**', 'config/includes.chroot/etc/skel/.config/hypr/**']
+    paths: ['.github/workflows/probe.yml', 'config/includes.chroot/usr/share/sddm/**']
 jobs:
   probe:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - run: |
-          docker run --rm --privileged -v "$PWD":/w debian:trixie bash -c '
-            echo "deb http://deb.debian.org/debian trixie-backports main contrib" > /etc/apt/sources.list.d/bp.list
+          docker run --rm -v "$PWD":/w debian:trixie bash -c '
             apt-get update -qq >/dev/null 2>&1
-            apt-get install -y -qq -t trixie-backports hyprland hyprlock hypridle hyprpaper xdg-desktop-portal-hyprland >/tmp/i.log 2>&1 || tail -30 /tmp/i.log
-            export XDG_RUNTIME_DIR=/tmp/xdg; mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR
-            Hyprland --version | head -3
-            echo "===== CONFIG POR DEFECTO ====="
-            dpkg -L hyprland | grep -iE "conf|exampl|hypr/" | head; f=$(dpkg -L hyprland | grep -iE "hyprland.conf" | head -1); grep -inE "rule|gesture|shadow|layout|bind" /usr/share/hypr/hyprland.lua | head -60
-            echo "===== VERIFICAR CRACK OS ====="
-            mkdir -p /usr/share/crackos && cp -r /w/config/includes.chroot/usr/share/crackos/hypr /usr/share/crackos/
-            Hyprland --i-am-really-stupid --verify-config -c /w/config/includes.chroot/etc/skel/.config/hypr/hyprland.conf 2>&1 | tail -40
+            echo "===== OPCIONALES ====="
+            for p in $(grep -v "^\s*#" /w/config/optional-packages.list); do apt-cache show "$p" >/dev/null 2>&1 && echo "+ $p" || echo "- $p"; done
+            echo "===== SDDM ====="
+            apt-cache policy sddm | head -3; apt-cache depends sddm | grep -iE "qt|qml|greeter"
+            DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends sddm qml6-module-qtquick qml6-module-qtquick-window qml6-module-qtqml-workerscript qml-module-qtquick2 qml-module-qtquick-window2 xauth >/tmp/i.log 2>&1 || tail -20 /tmp/i.log
+            ls /usr/bin | grep -i sddm
+            export XDG_RUNTIME_DIR=/tmp/xdg QT_QPA_PLATFORM=offscreen; mkdir -p $XDG_RUNTIME_DIR; chmod 700 $XDG_RUNTIME_DIR
+            for g in /usr/bin/sddm-greeter*; do echo "--- $g"; timeout 12 $g --test-mode --theme /w/config/includes.chroot/usr/share/sddm/themes/crackos 2>&1 | grep -viE "^$" | head -40; done
           '
