@@ -1,0 +1,19 @@
+name: Probar actualizacion de seguridad
+
+on:
+  push:
+    paths: ['seguridad/**', 'tests/seguridad*', '.github/workflows/seguridad.yml']
+  workflow_dispatch:
+
+jobs:
+  prueba:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Crack Guard contra ataques simulados
+        run: sudo tests/seguridad-guard.sh
+
+      - name: Instalar en un Debian 13 limpio (con systemd) y probar todo
+        run: sudo tests/seguridad-debian.sh

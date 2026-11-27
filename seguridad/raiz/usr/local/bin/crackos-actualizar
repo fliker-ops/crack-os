@@ -1,0 +1,10 @@
+#!/bin/bash
+# Crack OS - descarga y aplica la ultima actualizacion de seguridad desde GitHub
+#   sudo crackos-actualizar            (version estable, rama main)
+#   sudo crackos-actualizar RAMA       (probar otra version)
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+REF="${1:-main}"
+curl -fsSL "https://raw.githubusercontent.com/fliker-ops/crack-os/$REF/seguridad/instalar.sh" -o /tmp/crackos-instalar.sh \
+  || { echo "No se pudo descargar la actualizacion (¿hay internet?)"; exit 1; }
+CRACKOS_REF="$REF" bash /tmp/crackos-instalar.sh
+rc=$?; rm -f /tmp/crackos-instalar.sh; exit $rc

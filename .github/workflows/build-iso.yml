@@ -3,7 +3,7 @@ name: Compilar ISO de Crack OS
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md', 'docs/**']
+    paths-ignore: ['**.md', 'docs/**', 'seguridad/**', 'tests/seguridad*', '.github/workflows/seguridad.yml']
   workflow_dispatch:
   release:
     types: [published]

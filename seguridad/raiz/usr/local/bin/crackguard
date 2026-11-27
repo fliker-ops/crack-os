@@ -299,6 +299,8 @@ def cmd_tiempo_real(args):
     units = ["crackos-clamd", "crackos-clamonacc"]
     subprocess.run(["systemctl", "enable" if on else "disable", "--now"] + units)
     set_conf("antivirus_tiempo_real", "si" if on else "no")
+    os.makedirs("/var/lib/crackos", exist_ok=True)
+    open("/var/lib/crackos/.tiempo-real-elegido", "w").close()
     print(f"{W}Bloqueo en tiempo real {'activado' if on else 'desactivado'}.{N}")
     return 0
 
