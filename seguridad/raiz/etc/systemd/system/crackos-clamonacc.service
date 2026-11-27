@@ -1,0 +1,15 @@
+[Unit]
+Description=Crack OS - antivirus en tiempo real (bloquea virus al abrirlos)
+Requires=crackos-clamd.service
+After=crackos-clamd.service crackos-guard.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 280); do [ -S /run/crackos-av/clamd.sock ] && exit 0; sleep 2; done; exit 1'
+ExecStart=/usr/sbin/clamonacc -F --fdpass --config-file=/etc/crackos/clamd.conf --log=/var/log/clamav/crackos-clamonacc.log
+Restart=on-failure
+RestartSec=20
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target

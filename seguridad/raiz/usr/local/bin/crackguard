@@ -1,0 +1,562 @@
+#!/usr/bin/env python3
+# crackguard - panel y comandos de seguridad de Crack OS
+#
+#   crackguard                  panel interactivo
+#   crackguard estado           resumen de la proteccion
+#   crackguard escanear [ruta]  busca virus (por defecto tu carpeta personal)
+#   crackguard cuarentena       archivos aislados  (restaurar ID | borrar ID | borrar todo)
+#   crackguard congelados       procesos congelados (terminar PID | reanudar PID)
+#   crackguard registro [N]     ultimos eventos
+#   crackguard permitir RUTA    no volver a avisar de ese programa
+#   crackguard modo bloquear|avisar
+#   crackguard tiempo-real si|no
+#   crackguard firmas           actualiza la base de virus
+#   crackguard prueba           comprueba que todo funciona (virus de prueba EICAR + proceso falso)
+#   crackguard waybar           estado para la barra (JSON)
+import json
+import os
+import pwd
+import re
+import shutil
+import signal
+import subprocess
+import sys
+import time
+
+RUN = "/run/crackos-guard"
+STATE = RUN + "/estado.json"
+LOG = "/var/lib/crackos/guard/eventos.jsonl"
+QUAR = "/var/lib/crackos/cuarentena"
+CONF = "/etc/crackos/guard.conf"
+ALLOW = "/etc/crackos/guard-permitidos.list"
+CLAMD_CONF = "/etc/crackos/clamd.conf"
+
+R, W, G, D, B, N = "\033[38;2;255;40;50m", "\033[38;2;241;233;234m", "\033[38;2;150;140;142m", "\033[2m", "\033[1m", "\033[0m"
+OK, BAD = f"{W}✓{N}", f"{R}✗{N}"
+EICAR = r"X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+
+
+def need_root():
+    if os.geteuid() != 0:
+        os.execvp("sudo", ["sudo", os.path.realpath(sys.argv[0])] + sys.argv[1:])
+
+
+def read_json(path, default=None):
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return default
+
+
+def state():
+    st = read_json(STATE, {}) or {}
+    if st and time.time() - st.get("actualizado", 0) > 60:
+        st["activo"] = False
+    return st
+
+
+def unit_active(u):
+    return subprocess.run(["systemctl", "is-active", "--quiet", u]).returncode == 0
+
+
+def real_user():
+    u = os.environ.get("SUDO_USER") or os.environ.get("PKEXEC_UID") or ""
+    if u.isdigit():
+        u = pwd.getpwuid(int(u)).pw_name
+    if not u or u == "root":
+        try:
+            u = os.getlogin()
+        except OSError:
+            u = pwd.getpwuid(os.getuid()).pw_name
+    return pwd.getpwnam(u)
+
+
+def events(n=20):
+    out = []
+    try:
+        with open(LOG) as f:
+            lines = f.readlines()[-n * 3:]
+    except OSError:
+        return out
+    for l in lines:
+        try:
+            out.append(json.loads(l))
+        except ValueError:
+            pass
+    return out[-n:]
+
+
+def header():
+    print(f"""{R}{B}
+   ▄▄▄▄▄▄▄▄▄▄▄
+  █  ▄▄▄ ▄▄▄  █    C R A C K   G U A R D{N}{G}
+  █  ███ ███  █    protección de Crack OS{R}{B}
+   ▀▄▄ ▀▄▀ ▄▄▀
+     █▀█▀█▀█{N}
+""")
+
+
+# ------------------------------------------------------------------ estado
+def cmd_estado(_=None):
+    st = state()
+    if not st:
+        print(f"{R}Crack Guard no está corriendo.{N} Inícialo con: sudo systemctl start crackos-guard")
+        return 1
+    rows = [
+        ("Vigilante de procesos", st.get("activo"), f"modo {st.get('modo', '?')}"),
+        ("Antivirus (ClamAV)", st.get("antivirus"), f"firmas: {st.get('firmas') or 'sin descargar'}"),
+        ("Bloqueo en tiempo real", st.get("tiempo_real"), "carpetas personales, /tmp y USB"),
+        ("Firewall", st.get("firewall"), "entradas bloqueadas"),
+        ("AppArmor", st.get("apparmor"), "programas encerrados en su perfil"),
+        ("Fail2ban", st.get("fail2ban"), "bloquea intentos de acceso por fuerza bruta"),
+        ("Actualizaciones de seguridad", st.get("actualizaciones"), "automáticas cada día"),
+    ]
+    for name, ok, info in rows:
+        print(f"  {OK if ok else BAD}  {W}{name:<30}{N}{G}{info}{N}")
+    fr = st.get("congelados") or []
+    print()
+    print(f"  {G}Eventos desde el arranque:{N} {W}{st.get('eventos', 0)}{N}   {G}virus bloqueados:{N} {W}{st.get('virus', 0)}{N}")
+    if fr:
+        print(f"\n  {R}{B}{len(fr)} proceso(s) congelado(s) esperando tu decisión:{N}")
+        for f in fr:
+            print(f"   {R}■{N} PID {f['pid']:<7} {W}{f.get('exe')}{N} {G}— {f.get('titulo')}{N}")
+        print(f"  {G}Usa: crackguard congelados terminar PID   |   crackguard congelados reanudar PID{N}")
+    return 0
+
+
+def cmd_waybar(_=None):
+    st = state()
+    fr = st.get("congelados") or []
+    last = st.get("ultimo") or {}
+    recent = last and last.get("nivel") in ("critico", "alto") and \
+        time.time() - time.mktime(time.strptime(last.get("hora", "1970-01-01 00:00:00"), "%Y-%m-%d %H:%M:%S")) < 900
+    problems = [n for k, n in (("antivirus", "antivirus"), ("firewall", "firewall"), ("apparmor", "AppArmor"))
+                if st and not st.get(k)]
+    if not st or not st.get("activo"):
+        out = {"text": "\U000F0ADC", "class": "off", "tooltip": "Crack Guard detenido"}
+    elif fr:
+        out = {"text": f"\U000F0ECC {len(fr)}", "class": "alerta",
+               "tooltip": f"{len(fr)} proceso(s) congelado(s): {fr[0].get('titulo')}\nClic para decidir"}
+    elif recent:
+        out = {"text": "\U000F0ECC", "class": "alerta", "tooltip": f"{last.get('titulo')}\n{last.get('detalle', '')[:120]}"}
+    elif problems:
+        out = {"text": "\U000F0ECD", "class": "aviso", "tooltip": "Desactivado: " + ", ".join(problems)}
+    else:
+        out = {"text": "\U000F0565", "class": "ok",
+               "tooltip": f"Protegido · {st.get('eventos', 0)} eventos · firmas {st.get('firmas') or '-'}"}
+    print(json.dumps(out, ensure_ascii=False))
+
+
+# ------------------------------------------------------------------ antivirus
+def cmd_escanear(args):
+    need_root()
+    target = os.path.realpath(args[0]) if args else real_user().pw_dir
+    if not os.path.exists(target):
+        print(f"{R}No existe: {target}{N}")
+        return 1
+    guard_on = state().get("activo")
+    print(f"{W}Escaneando {B}{target}{N}{W} ... (puede tardar){N}")
+    clamd = unit_active("crackos-clamd") and os.path.exists("/run/crackos-av/clamd.sock")
+    if clamd:
+        cmd = ["clamdscan", "--config-file=" + CLAMD_CONF, "--multiscan", "--fdpass", "--infected", target]
+    else:
+        print(f"{G}(el antivirus residente está apagado, usando el escáner directo){N}")
+        cmd = ["clamscan", "-r", "--infected", "--max-filesize=200M", target]
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    found = []
+    for l in r.stdout.splitlines():
+        if l.endswith(" FOUND"):
+            path, virus = l[:-6].rsplit(": ", 1)
+            found.append((path, virus))
+    for path, virus in found:
+        if guard_on:
+            if not clamd:          # con clamd el aviso llega solo (VirusEvent)
+                inbox_put(path, virus)
+        else:
+            quarantine(path, "Virus: " + virus)
+    for _ in range(20):            # esperar a que Crack Guard los aisle
+        if not any(os.path.exists(p) for p, _ in found):
+            break
+        time.sleep(0.5)
+    for path, virus in found:
+        where = f"{G}→ cuarentena{N}" if not os.path.exists(path) else f"{R}(sigue en su lugar){N}"
+        print(f"  {R}☠ {virus}{N}  {W}{path}{N}  {where}")
+    if r.returncode not in (0, 1):
+        print(f"{R}Error del escáner:{N} {(r.stderr or r.stdout).strip()[-400:]}")
+        return 2
+    print(f"\n  {OK if not found else BAD}  {W}{len(found)} amenaza(s) encontrada(s){N}")
+    log_event({"nivel": "info", "titulo": "Escaneo terminado", "detalle": f"{target}: {len(found)} amenazas"})
+    return 0
+
+
+def inbox_put(path, virus):
+    n = f"{time.time_ns()}-{os.getpid()}"
+    tmp = os.path.join(RUN, "inbox", "." + n)
+    with open(tmp, "w") as f:
+        json.dump({"archivo": path, "virus": virus}, f)
+    os.rename(tmp, os.path.join(RUN, "inbox", n + ".json"))
+
+
+def log_event(ev):
+    ev.setdefault("hora", time.strftime("%Y-%m-%d %H:%M:%S"))
+    try:
+        os.makedirs(os.path.dirname(LOG), exist_ok=True)
+        with open(LOG, "a") as f:
+            f.write(json.dumps(ev, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+
+
+def quarantine(path, reason):
+    if not os.path.isfile(path):
+        return ""
+    os.makedirs(QUAR, mode=0o700, exist_ok=True)
+    qid = time.strftime("%Y%m%d-%H%M%S-") + re.sub(r"[^A-Za-z0-9._-]", "_", os.path.basename(path))[:60]
+    st = os.stat(path)
+    shutil.move(path, os.path.join(QUAR, qid + ".cuarentena"))
+    os.chmod(os.path.join(QUAR, qid + ".cuarentena"), 0)
+    with open(os.path.join(QUAR, qid + ".json"), "w") as f:
+        json.dump({"id": qid, "original": path, "motivo": reason, "uid": st.st_uid, "modo": st.st_mode & 0o777,
+                   "hora": time.strftime("%Y-%m-%d %H:%M:%S")}, f, ensure_ascii=False)
+    log_event({"nivel": "info", "titulo": "Archivo aislado", "detalle": f"{path} ({reason})", "cuarentena": qid})
+    return qid
+
+
+def quarantine_items():
+    items = []
+    try:
+        names = sorted(os.listdir(QUAR))
+    except OSError:
+        return items
+    for n in names:
+        if n.endswith(".json"):
+            m = read_json(os.path.join(QUAR, n), {})
+            if m and os.path.exists(os.path.join(QUAR, m["id"] + ".cuarentena")):
+                items.append(m)
+    return items
+
+
+def cmd_cuarentena(args):
+    need_root()
+    items = quarantine_items()
+    if args[:1] == ["restaurar"] and len(args) > 1:
+        m = next((i for i in items if i["id"] == args[1]), None)
+        if not m:
+            print(f"{R}No encontrado: {args[1]}{N}")
+            return 1
+        dst = m["original"]
+        if os.path.exists(dst):
+            dst += ".restaurado"
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        shutil.move(os.path.join(QUAR, m["id"] + ".cuarentena"), dst)
+        os.chmod(dst, m.get("modo", 0o644) & 0o777 & ~0o111 if "Virus" in m.get("motivo", "") else m.get("modo", 0o644) & 0o777)
+        if m.get("uid", -1) >= 0:
+            os.chown(dst, m["uid"], -1)
+        os.unlink(os.path.join(QUAR, m["id"] + ".json"))
+        allow_path(dst)
+        print(f"{W}Restaurado en {dst}{N} {G}(sin permiso de ejecución si era un virus){N}")
+        log_event({"nivel": "info", "titulo": "Archivo restaurado de la cuarentena", "detalle": dst})
+        return 0
+    if args[:1] == ["borrar"] and len(args) > 1:
+        sel = items if args[1] == "todo" else [i for i in items if i["id"] == args[1]]
+        for m in sel:
+            for ext in (".cuarentena", ".json"):
+                try:
+                    os.unlink(os.path.join(QUAR, m["id"] + ext))
+                except OSError:
+                    pass
+        print(f"{W}{len(sel)} archivo(s) eliminado(s) definitivamente.{N}")
+        return 0
+    if not items:
+        print(f"  {OK}  {W}La cuarentena está vacía.{N}")
+        return 0
+    print(f"  {W}{B}{len(items)} archivo(s) aislado(s){N}\n")
+    for m in items:
+        print(f"  {R}■{N} {W}{m['id']}{N}\n      {G}{m['original']}  ·  {m.get('motivo')}  ·  {m.get('hora')}{N}")
+    print(f"\n  {G}crackguard cuarentena restaurar ID   |   crackguard cuarentena borrar ID|todo{N}")
+    return 0
+
+
+def cmd_firmas(_=None):
+    need_root()
+    print(f"{W}Actualizando la base de virus...{N}")
+    was = unit_active("clamav-freshclam")
+    if was:
+        subprocess.run(["systemctl", "stop", "clamav-freshclam"])
+    r = subprocess.run(["freshclam", "--quiet", "--show-progress"])
+    if was:
+        subprocess.run(["systemctl", "start", "clamav-freshclam"])
+    if unit_active("crackos-clamd"):
+        subprocess.run(["clamdscan", "--config-file=" + CLAMD_CONF, "--reload"], capture_output=True)
+    print(f"  {OK if r.returncode == 0 else BAD}  {W}{'Firmas al día' if r.returncode == 0 else 'No se pudo actualizar (¿hay internet?)'}{N}")
+    return r.returncode
+
+
+def cmd_tiempo_real(args):
+    need_root()
+    on = (args[:1] or ["si"])[0] in ("si", "sí", "on", "1")
+    units = ["crackos-clamd", "crackos-clamonacc"]
+    subprocess.run(["systemctl", "enable" if on else "disable", "--now"] + units)
+    set_conf("antivirus_tiempo_real", "si" if on else "no")
+    print(f"{W}Bloqueo en tiempo real {'activado' if on else 'desactivado'}.{N}")
+    return 0
+
+
+# ------------------------------------------------------------------ procesos
+def cmd_congelados(args):
+    st = state()
+    fr = st.get("congelados") or []
+    if args[:1] in (["terminar"], ["reanudar"]) and len(args) > 1:
+        need_root()
+        pid = int(args[1])
+        ev = next((f for f in fr if f["pid"] == pid), {})
+        if args[0] == "terminar":
+            os.kill(pid, signal.SIGKILL)
+            print(f"{W}Proceso {pid} terminado.{N}")
+            exe = ev.get("exe", "")
+            if exe and exe.startswith(("/tmp/", "/var/tmp/", "/dev/shm/", "/home/", "/root/")):
+                qid = quarantine(exe, ev.get("titulo", ""))
+                if qid:
+                    print(f"{G}El programa {exe} quedó en cuarentena ({qid}).{N}")
+            log_event({"nivel": "info", "titulo": "Proceso terminado desde el panel", "detalle": f"{exe} (PID {pid})"})
+        else:
+            os.kill(pid, signal.SIGCONT)
+            print(f"{W}Proceso {pid} reanudado.{N}")
+            log_event({"nivel": "info", "titulo": "Proceso reanudado desde el panel", "detalle": f"PID {pid}"})
+        return 0
+    if not fr:
+        print(f"  {OK}  {W}No hay procesos congelados.{N}")
+        return 0
+    for f in fr:
+        print(f"  {R}■{N} PID {f['pid']:<7} {W}{f.get('exe')}{N}\n      {G}{f.get('titulo')} · usuario {f.get('usuario')} · {f.get('hora')}{N}")
+    print(f"\n  {G}crackguard congelados terminar PID   |   crackguard congelados reanudar PID{N}")
+    return 0
+
+
+def allow_path(path):
+    with open(ALLOW, "a") as f:
+        f.write(f"{path}    # permitido {time.strftime('%Y-%m-%d %H:%M')}\n")
+    subprocess.run(["systemctl", "reload", "crackos-guard"], capture_output=True)
+
+
+def cmd_permitir(args):
+    need_root()
+    if not args:
+        print("Uso: crackguard permitir /ruta/al/programa")
+        return 1
+    p = os.path.realpath(args[0])
+    allow_path(p)
+    print(f"{W}{p} ya no generará avisos.{N}")
+    return 0
+
+
+def set_conf(key, value):
+    lines, found = [], False
+    try:
+        lines = open(CONF).read().splitlines()
+    except OSError:
+        pass
+    for i, l in enumerate(lines):
+        if re.match(rf"\s*{re.escape(key)}\s*=", l):
+            lines[i], found = f"{key} = {value}", True
+    if not found:
+        lines.append(f"{key} = {value}")
+    with open(CONF, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    subprocess.run(["systemctl", "reload", "crackos-guard"], capture_output=True)
+
+
+def cmd_modo(args):
+    if not args or args[0] not in ("bloquear", "avisar"):
+        print("Uso: crackguard modo bloquear|avisar")
+        return 1
+    need_root()
+    set_conf("modo", args[0])
+    print(f"{W}Modo: {args[0]}{N} {G}({'congela lo peligroso y te pregunta' if args[0] == 'bloquear' else 'solo avisa'}){N}")
+    return 0
+
+
+def cmd_registro(args):
+    n = int(args[0]) if args and args[0].isdigit() else 25
+    evs = events(n)
+    if not evs:
+        print(f"  {G}Sin eventos todavía.{N}")
+    col = {"critico": R + B, "alto": R, "medio": W, "info": G}
+    for e in evs:
+        c = col.get(e.get("nivel"), G)
+        print(f"  {G}{e.get('hora', '')}{N}  {c}{e.get('nivel', ''):<7}{N} {W}{e.get('titulo', '')}{N}")
+        if e.get("detalle"):
+            print(f"  {' ' * 19}  {G}{e['detalle'][:110]}{N}")
+    return 0
+
+
+# ------------------------------------------------------------------ prueba
+def cmd_prueba(args):
+    need_root()
+    u = real_user()
+    ok_all = True
+    print(f"{W}{B}1) Virus de prueba EICAR{N} {G}(archivo inofensivo que todos los antivirus detectan){N}")
+    d = os.path.join(u.pw_dir, "Descargas") if os.path.isdir(os.path.join(u.pw_dir, "Descargas")) else u.pw_dir
+    f = os.path.join(d, "crackguard-prueba-eicar.com")
+    subprocess.run(["runuser", "-u", u.pw_name, "--", "sh", "-c", f"printf '%s' '{EICAR}' > '{f}'"])
+    time.sleep(1.5)
+    r = subprocess.run(["runuser", "-u", u.pw_name, "--", "cat", f], capture_output=True, text=True)
+    if unit_active("crackos-clamonacc"):
+        blocked = r.returncode != 0
+        if not blocked:
+            msg = "NO se bloqueó la apertura"
+        elif "No such file" in r.stderr or "No existe" in r.stderr:
+            msg = "Detectado en cuanto se guardó (ni siquiera se pudo abrir)"
+        else:
+            msg = "Bloqueado al intentar abrirlo (" + (r.stderr.strip().split(": ")[-1] or "acceso denegado") + ")"
+        print(f"  {OK if blocked else BAD}  {W}{msg}{N}")
+        ok_all &= blocked
+    else:
+        print(f"  {G}·  El bloqueo en tiempo real está apagado; probando con escaneo{N}")
+    for _ in range(10):
+        if not os.path.exists(f):
+            break
+        time.sleep(1)
+    if os.path.exists(f):
+        cmd_escanear([f])
+    gone = not os.path.exists(f)
+    print(f"  {OK if gone else BAD}  {W}{'Movido a la cuarentena' if gone else 'Sigue en ' + f}{N}")
+    ok_all &= gone
+
+    print(f"\n{W}{B}2) Proceso sospechoso{N} {G}(un programa llamado xmrig, como un minero, desde /tmp){N}")
+    fake = "/tmp/xmrig"
+    shutil.copy("/bin/sleep", fake)
+    os.chmod(fake, 0o755)
+    p = subprocess.Popen(["runuser", "-u", u.pw_name, "--", fake, "60"])
+    frozen = False
+    for _ in range(16):
+        time.sleep(0.5)
+        try:
+            pids = subprocess.run(["pgrep", "-f", "^/tmp/xmrig 60"], capture_output=True, text=True).stdout.split()
+            for pid in pids:
+                if re.search(r"^State:\s+T", open(f"/proc/{pid}/status").read(), re.M):
+                    frozen = True
+        except OSError:
+            pass
+        if frozen:
+            break
+    print(f"  {OK if frozen else BAD}  {W}{'Detectado y congelado (revisa el aviso en pantalla)' if frozen else 'No se congeló'}{N}")
+    ok_all &= frozen
+    subprocess.run(["pkill", "-9", "-f", "^/tmp/xmrig 60"])
+    p.wait()
+    try:
+        os.unlink(fake)
+    except OSError:
+        pass
+    print(f"\n{(W + B + 'Todo funciona.') if ok_all else (R + B + 'Algo falló, revisa: crackguard estado')}{N}")
+    return 0 if ok_all else 1
+
+
+# ------------------------------------------------------------------ panel
+def panel(_=None):
+    menu = [("Estado", lambda: cmd_estado()),
+            ("Escanear mi carpeta personal", lambda: cmd_escanear([])),
+            ("Escanear una USB o carpeta", lambda: cmd_escanear([pick_path()])),
+            ("Cuarentena", lambda: quarantine_menu()),
+            ("Procesos congelados", lambda: frozen_menu()),
+            ("Registro de eventos", lambda: cmd_registro([])),
+            ("Actualizar base de virus", lambda: cmd_firmas()),
+            ("Probar la protección", lambda: cmd_prueba([])),
+            ("Cambiar modo (bloquear / avisar)", lambda: cmd_modo(["avisar" if state().get("modo") == "bloquear" else "bloquear"]))]
+    while True:
+        os.system("clear")
+        header()
+        cmd_estado()
+        print(f"\n  {R}{'─' * 58}{N}")
+        for i, (name, _) in enumerate(menu, 1):
+            print(f"   {R}{i}{N}  {W}{name}{N}")
+        print(f"   {R}0{N}  {G}Salir{N}")
+        try:
+            c = input(f"\n  {R}›{N} ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return 0
+        if c in ("0", "q", ""):
+            return 0
+        if c.isdigit() and 1 <= int(c) <= len(menu):
+            print()
+            try:
+                run_sub(menu[int(c) - 1][0])
+            except KeyboardInterrupt:
+                pass
+            try:
+                input(f"\n  {G}Enter para volver…{N}")
+            except (EOFError, KeyboardInterrupt):
+                return 0
+
+
+def run_sub(name):
+    """Las acciones de root se ejecutan con sudo en un subproceso para no perder el panel."""
+    me = os.path.realpath(sys.argv[0])
+    table = {"Estado": [me, "estado"], "Escanear mi carpeta personal": ["sudo", me, "escanear", os.path.expanduser("~")],
+             "Registro de eventos": [me, "registro"], "Actualizar base de virus": ["sudo", me, "firmas"],
+             "Probar la protección": ["sudo", me, "prueba"]}
+    if name in table:
+        subprocess.run(table[name])
+    elif name == "Escanear una USB o carpeta":
+        p = pick_path()
+        if p:
+            subprocess.run(["sudo", me, "escanear", p])
+    elif name == "Cuarentena":
+        quarantine_menu()
+    elif name == "Procesos congelados":
+        frozen_menu()
+    else:
+        nm = "avisar" if state().get("modo") == "bloquear" else "bloquear"
+        subprocess.run(["sudo", me, "modo", nm])
+
+
+def pick_path():
+    media = []
+    for base in ("/media", "/run/media"):
+        for root, dirs, _ in os.walk(base):
+            if root.count("/") >= base.count("/") + 2:
+                media += [root]
+                dirs[:] = []
+    for i, m in enumerate(media, 1):
+        print(f"   {R}{i}{N}  {W}{m}{N}")
+    s = input(f"  {G}Número de la USB o ruta de la carpeta:{N} ").strip()
+    if s.isdigit() and 1 <= int(s) <= len(media):
+        return media[int(s) - 1]
+    return os.path.expanduser(s)
+
+
+def quarantine_menu():
+    me = os.path.realpath(sys.argv[0])
+    subprocess.run(["sudo", me, "cuarentena"])
+    s = input(f"\n  {G}Escribe 'r ID' para restaurar, 'b ID' para borrar, 'b todo', o Enter:{N} ").strip().split()
+    if len(s) == 2 and s[0] in ("r", "b"):
+        subprocess.run(["sudo", me, "cuarentena", "restaurar" if s[0] == "r" else "borrar", s[1]])
+
+
+def frozen_menu():
+    me = os.path.realpath(sys.argv[0])
+    cmd_congelados([])
+    if state().get("congelados"):
+        s = input(f"\n  {G}Escribe 't PID' para terminar, 'r PID' para reanudar, o Enter:{N} ").strip().split()
+        if len(s) == 2 and s[0] in ("t", "r") and s[1].isdigit():
+            subprocess.run(["sudo", me, "congelados", "terminar" if s[0] == "t" else "reanudar", s[1]])
+
+
+CMDS = {"estado": cmd_estado, "waybar": cmd_waybar, "escanear": cmd_escanear, "cuarentena": cmd_cuarentena,
+        "congelados": cmd_congelados, "registro": cmd_registro, "permitir": cmd_permitir, "modo": cmd_modo,
+        "tiempo-real": cmd_tiempo_real, "firmas": cmd_firmas, "prueba": cmd_prueba, "panel": panel}
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if not a:
+        sys.exit(panel() if sys.stdin.isatty() else cmd_estado())
+    if a[0] in ("-h", "--help", "ayuda"):
+        print(__doc__ or open(os.path.realpath(sys.argv[0])).read().split("import json")[0].replace("# ", ""))
+        sys.exit(0)
+    f = CMDS.get(a[0])
+    if not f:
+        print(f"Comando desconocido: {a[0]}. Usa: crackguard ayuda")
+        sys.exit(1)
+    sys.exit(f(a[1:]) or 0)

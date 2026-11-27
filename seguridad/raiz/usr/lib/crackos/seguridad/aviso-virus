@@ -1,0 +1,11 @@
+#!/bin/sh
+# Crack OS: ClamAV encontro un virus -> se lo pasa a Crack Guard (aviso en pantalla + cuarentena)
+f="${CLAM_VIRUSEVENT_FILENAME:-$1}"
+v="${CLAM_VIRUSEVENT_VIRUSNAME:-$2}"
+d=/run/crackos-guard/inbox
+logger -t crackguard "virus: $v en $f"
+[ -d "$d" ] || exit 0
+n="$(date +%s%N)-$$"
+python3 -c 'import json,sys; print(json.dumps({"archivo": sys.argv[1], "virus": sys.argv[2]}))' "$f" "$v" > "$d/.$n" \
+  && mv "$d/.$n" "$d/$n.json"
+exit 0

@@ -1,0 +1,9 @@
+[Unit]
+Description=Crack OS - escaneo antivirus semanal de las carpetas personales
+After=crackos-clamd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/crackguard escanear /home
+Nice=19
+IOSchedulingClass=idle

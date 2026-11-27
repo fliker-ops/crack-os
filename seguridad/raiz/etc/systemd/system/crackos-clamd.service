@@ -1,0 +1,19 @@
+[Unit]
+Description=Crack OS - motor antivirus (ClamAV)
+After=network.target clamav-freshclam.service
+Wants=clamav-freshclam.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /run/crackos-av /var/cache/crackos-av /var/log/clamav
+ExecStartPre=/bin/chown clamav:clamav /run/crackos-av /var/cache/crackos-av /var/log/clamav
+ExecStart=/usr/sbin/clamd --foreground=true -c /etc/crackos/clamd.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+Restart=on-failure
+RestartSec=30
+TimeoutStartSec=600
+Nice=5
+OOMScoreAdjust=-300
+
+[Install]
+WantedBy=multi-user.target
