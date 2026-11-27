@@ -54,6 +54,10 @@ echo "==================== SEGUNDA VEZ (crackos-actualizar debe ser idempotente)
 X "bash /repo/seguridad/instalar.sh >/dev/null" && X "systemctl is-active --quiet crackos-guard" && echo "OK    reinstalar" || { echo "FALLA reinstalar"; fail=1; }
 X "grep -c custom/guard /home/crack/.config/waybar/config.jsonc"
 
+echo "==================== CAPTURAS ===================="
+X "bash /repo/tests/seguridad-capturas.sh" || echo "AVISO: las capturas fallaron"
+rm -rf capturas-seguridad; docker cp crackos-prueba:/capturas capturas-seguridad 2>/dev/null || true
+
 docker rm -f crackos-prueba >/dev/null
 [ $fail = 0 ] && echo "TODO BIEN" || echo "HAY FALLAS"
 exit $fail

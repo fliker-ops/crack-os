@@ -5,6 +5,9 @@ on:
     paths: ['seguridad/**', 'tests/seguridad*', '.github/workflows/seguridad.yml']
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   prueba:
     runs-on: ubuntu-24.04
@@ -17,3 +20,15 @@ jobs:
 
       - name: Instalar en un Debian 13 limpio (con systemd) y probar todo
         run: sudo tests/seguridad-debian.sh
+
+      - name: Publicar capturas en la rama capturas-seguridad
+        if: always()
+        run: |
+          [ -d capturas-seguridad ] || exit 0
+          sudo chown -R "$USER" capturas-seguridad
+          git config user.name "crackos-ci"; git config user.email "crackos-ci@users.noreply.github.com"
+          tmp=$(mktemp -d); cp -r capturas-seguridad "$tmp/"
+          git checkout --orphan capturas-seguridad
+          git rm -rfq . >/dev/null
+          cp -r "$tmp/capturas-seguridad" . && git add capturas-seguridad
+          git commit -qm "Capturas de seguridad de ${GITHUB_SHA::7}" && git push -f origin capturas-seguridad
