@@ -1,0 +1,39 @@
+name: Compilar app Crack Pro (APK)
+
+on:
+  push:
+    paths: ['pro/**', '.github/workflows/build-pro-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pro-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.11.1' }
+      - name: Compilar APK
+        run: |
+          cd pro/android
+          gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../../CrackPro.apk
+          ls -la ../../CrackPro.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: CrackPro-apk, path: CrackPro.apk, retention-days: 30 }
+      - name: Publicar APK en la rama "apk-pro"
+        run: |
+          mkdir /tmp/out && cp CrackPro.apk /tmp/out/
+          cd /tmp/out && git init -q && git checkout -q -b apk-pro
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add . && git commit -qm "Crack Pro APK ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk-pro
