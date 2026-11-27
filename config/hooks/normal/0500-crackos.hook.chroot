@@ -135,6 +135,7 @@ ln -sf .face /etc/skel/.face.icon
 if [ -d /var/lib/AccountsService ]; then mkdir -p /var/lib/AccountsService/icons; fi
 
 systemctl enable crackos-live-autologin.service
+systemctl enable crackos-remote.service
 
 # ---- Root con la misma terminal ----
 cp /etc/skel/.bashrc /root/.bashrc

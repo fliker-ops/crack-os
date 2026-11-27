@@ -1,0 +1,72 @@
+name: Compilar app Crack Remote (APK)
+
+on:
+  push:
+    paths: ['app/**', '.github/workflows/build-apk.yml', 'config/includes.chroot/usr/lib/crackos/remote/**', 'tests/app-*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.11.1' }
+      - name: Compilar APK
+        run: |
+          cd app/android
+          gradle --no-daemon assembleRelease
+          cp app/build/outputs/apk/release/app-release.apk ../../CrackRemote.apk
+          ls -la ../../CrackRemote.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: CrackRemote-apk, path: CrackRemote.apk, retention-days: 30 }
+      - name: Publicar APK en la rama "apk"
+        run: |
+          mkdir /tmp/out && cp CrackRemote.apk /tmp/out/
+          cd /tmp/out && git init -q && git checkout -q -b apk
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add . && git commit -qm "APK ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" apk
+
+  prueba-emulador:
+    needs: apk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: CrackRemote-apk }
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: PC de prueba (escritorio sway + agente Crack OS Remote)
+        run: sudo bash tests/app-pc-setup.sh
+      - name: Probar el APK en un emulador Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash tests/app-emulator.sh
+      - name: Publicar capturas en la rama "capturas-app"
+        if: always()
+        run: |
+          [ -d /tmp/app-shots ] || exit 0
+          cd /tmp/app-shots && git init -q && git checkout -q -b capturas-app
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git add . && git commit -qm "capturas ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" capturas-app

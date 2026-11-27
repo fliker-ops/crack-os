@@ -62,6 +62,9 @@ sway-notification-center
 grim
 slurp
 wl-clipboard
+wtype
+python3
+python3-pil
 brightnessctl
 playerctl
 pamixer
