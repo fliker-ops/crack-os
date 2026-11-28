@@ -43,12 +43,12 @@ sleep 5; shot 02-virus-bloqueado
 
 # 2) proceso sospechoso: un "minero" que se ejecuta desde /tmp
 cp /bin/sleep /tmp/xmrig; chmod 755 /tmp/xmrig
-runuser -u crack -- /tmp/xmrig 600 &
+setpriv --reuid=crack --regid=crack --clear-groups /tmp/xmrig 600 &
 sleep 6; shot 03-minero-congelado
 A swaync-client -C >/dev/null 2>&1
 
 # 3) reverse shell (comando tipico de puerta trasera)
-runuser -u crack -- bash -c ': /dev/tcp/203.0.113.9/4444; sleep 600; true' &
+setpriv --reuid=crack --regid=crack --clear-groups bash -c ': /dev/tcp/203.0.113.9/4444; sleep 600; true' &
 sleep 6; shot 04-puerta-trasera
 A swaync-client -C >/dev/null 2>&1; sleep 1
 
