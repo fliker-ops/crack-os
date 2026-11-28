@@ -264,6 +264,23 @@ class Proc:
         return os.path.basename(self.path) or self.comm
 
 
+def is_mine(pid):
+    """True si el proceso es hijo/nieto del propio vigilante (sus avisos llevan el texto del ataque)."""
+    for _ in range(6):
+        st = read(f"/proc/{pid}/stat")
+        if not st:
+            return False
+        try:
+            pid = int(st[st.rindex(")") + 2:].split()[1])
+        except (ValueError, IndexError):
+            return False
+        if pid == MYPID:
+            return True
+        if pid <= 1:
+            return False
+    return False
+
+
 def fd_targets(pid, fds=("0", "1", "2")):
     out = []
     for fd in fds:
@@ -422,7 +439,7 @@ class Guard:
 
     # ---------------------------------------------------------- reglas por proceso
     def check_new(self, p):
-        if p.kthread or p.pid in (1, MYPID) or self.allowed(p):
+        if p.kthread or p.pid in (1, MYPID) or self.allowed(p) or is_mine(p.pid):
             return
         exe, path, base, cmd = p.exe, p.path, p.base.lower(), p.cmd
         home_hidden = path.startswith("/home/") and "/." in path[6:] and not any(h in path for h in HOME_OK)

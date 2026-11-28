@@ -57,6 +57,7 @@ X "grep -c custom/guard /home/crack/.config/waybar/config.jsonc"
 
 echo "==================== CAPTURAS ===================="
 X "bash /repo/tests/seguridad-capturas.sh" || echo "AVISO: las capturas fallaron"
+X "! grep -Eq 'notify-send|runuser' /run/crackos-guard/estado.json" && echo "OK    Crack Guard no se congela a si mismo" || { echo "FALLA Crack Guard congelo sus propios avisos"; fail=1; }
 rm -rf capturas-seguridad; docker cp crackos-prueba:/capturas capturas-seguridad 2>/dev/null || true
 
 docker rm -f crackos-prueba >/dev/null

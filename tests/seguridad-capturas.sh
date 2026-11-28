@@ -41,7 +41,7 @@ client.focused #ff2832 #1a0b0d #ffffff #ff2832 #ff2832
 client.unfocused #3a1a1d #120809 #8c7a7c #3a1a1d #3a1a1d
 gaps inner 10
 gaps outer 6
-for_window [app_id="crackos-float"] floating enable, resize set 1000 640, move position center
+for_window [app_id="crackos-float"] floating enable, resize set 1040 780, move position center
 exec swaync
 exec waybar
 SW
