@@ -1,0 +1,17 @@
+[Unit]
+Description=Crack Guard - vigilante de procesos sospechosos de Crack OS
+After=local-fs.target systemd-logind.service
+Documentation=man:crackguard
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/lib/crackos/seguridad/crackos-guard.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=3
+Nice=-5
+OOMScoreAdjust=-900
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

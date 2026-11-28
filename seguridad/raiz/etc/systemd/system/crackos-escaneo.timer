@@ -1,0 +1,10 @@
+[Unit]
+Description=Crack OS - escaneo antivirus semanal
+
+[Timer]
+OnCalendar=Sun 13:00
+Persistent=true
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target

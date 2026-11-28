@@ -45,6 +45,37 @@ que borra todo al reiniciar y **llave USB opcional** para el modo normal.
   (`update` en la terminal = `sudo apt update && sudo apt full-upgrade`).
 - **Instalador** gráfico (Calamares) con la marca Crack OS.
 
+## Seguridad (Crack Guard)
+
+Se instala en un Crack OS que ya tienes, **sin reinstalar ni compilar una ISO nueva**:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fliker-ops/crack-os/main/seguridad/instalar.sh | sudo bash
+```
+
+Después, cada actualización futura es un solo comando: `sudo crackos-actualizar`.
+
+| Capa | Qué hace |
+|---|---|
+| **Crack Guard** | Vigila los procesos cada 2 s. Detecta mineros de criptomonedas, puertas traseras (reverse shells), malware sin archivo (ejecutado desde memoria), procesos disfrazados de kernel, programas que corren desde `/tmp` o `/dev/shm` o que se borran a sí mismos, puertos abiertos por programas sospechosos, archivos SUID en carpetas temporales y cambios en archivos críticos (`/etc/passwd`, sudoers, `ld.so.preload`, cron, claves SSH de root). Lo peligroso se **congela** y aparece un aviso con botones: *Terminar y aislar*, *Dejar correr* o *Permitir siempre*. |
+| **Antivirus ClamAV** | Bloqueo en tiempo real: un archivo con virus en tu carpeta personal, `/tmp` o una USB **no se puede abrir** y pasa a la cuarentena. Las USB se escanean solas al conectarlas, hay un escaneo completo cada domingo y la base de virus se actualiza sola. En PCs con menos de 3 GB de RAM queda en modo escaneo (el motor residente usa ~1 GB). |
+| **Firewall (UFW)** | Bloquea todo lo que entra sin permiso; lo que sale funciona normal. |
+| **AppArmor** | Encierra programas en perfiles que limitan lo que pueden tocar. |
+| **Fail2ban** | Bloquea a quien prueba contraseñas por fuerza bruta (SSH si lo instalas). |
+| **Kernel endurecido** | Protecciones contra exploits (ptrace, BPF, kexec, punteros del kernel, redirecciones de red, SYN flood), módulos peligrosos bloqueados (FireWire, protocolos raros), sin volcados de memoria. |
+| **Actualizaciones automáticas** | Los parches de seguridad de Debian se instalan solos cada día. |
+
+El escudo de la barra muestra el estado (rojo si hay algo que decidir); clic abre el panel. En la terminal:
+
+| Comando | Para qué |
+|---|---|
+| `crackguard` | Panel: estado, escanear, cuarentena, procesos congelados, registro |
+| `sudo crackguard prueba` | Comprueba que todo funciona (virus de prueba EICAR + proceso falso) |
+| `crackguard escanear [ruta]` | Busca virus (por defecto en tu carpeta) |
+| `crackguard cuarentena` | Ver, restaurar o borrar archivos aislados |
+| `crackguard modo avisar` | Solo avisar, sin congelar (`modo bloquear` para volver) |
+| `crackguard permitir RUTA` | No volver a avisar de un programa |
+
 ## Modos de arranque
 
 | Entrada del menú | Qué pasa |
