@@ -392,17 +392,17 @@ class Guard:
         record(ev)
         self.events += 1
         self.last = ev
-        who = f"{p.base} (PID {p.pid}, usuario {uname(p.uid)})"
+        who = f"{p.base} · PID {p.pid} · {uname(p.uid)}"
         if p.pid <= 1:      # alerta de archivo, no de proceso
             notify(level, ("☠ " if level == "critico" else "⚠ ") + title, detail)
         elif frozen:
-            body = f"{detail}\n\n{who}\nEl proceso está CONGELADO hasta que decidas."
+            body = f"{detail}\n{who}\n<b>Congelado</b> hasta que decidas."
             notify("critico", "☠ " + title, body,
-                   {"matar": "Terminar y aislar", "reanudar": "Dejar correr", "permitir": "Permitir siempre"},
+                   {"matar": "Terminar", "reanudar": "Dejar correr", "permitir": "Permitir"},
                    lambda a, pid=p.pid, ev=ev: self.on_action(a, pid, ev))
         elif level in ("critico", "alto"):
             notify(level, "⚠ " + title, f"{detail}\n\n{who}",
-                   {"matar": "Terminar", "permitir": "Permitir siempre", "ignorar": "Ignorar"},
+                   {"matar": "Terminar", "permitir": "Permitir", "ignorar": "Ignorar"},
                    lambda a, pid=p.pid, ev=ev: self.on_action(a, pid, ev))
         else:
             notify("medio", title, f"{detail}\n{who}")

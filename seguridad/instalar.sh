@@ -169,6 +169,20 @@ for d in /etc/skel/.config/waybar /home/*/.config/waybar /root/.config/waybar; d
         { [ "$d" = /etc/skel/.config/waybar ] || chown --reference="$d" "$d"/config* "$d"/style.css 2>/dev/null; }
 done
 pkill -SIGUSR2 -x waybar 2>/dev/null || true
+# avisos: sin el boton automatico "COPY" de SwayNC (confunde el PID con un codigo)
+for f in /etc/skel/.config/swaync/config.json /home/*/.config/swaync/config.json; do
+    [ -f "$f" ] && python3 - "$f" <<'PY'
+import json, sys
+f = sys.argv[1]
+d = json.load(open(f))
+if d.get("notification-2fa-action") is not False:
+    d["notification-2fa-action"] = False
+    json.dump(d, open(f, "w"), indent=2, ensure_ascii=False)
+PY
+done
+for b in /run/user/*/bus; do
+    u=$(stat -c %U "$b" 2>/dev/null) && runuser -u "$u" -- env DBUS_SESSION_BUS_ADDRESS="unix:path=$b" swaync-client -R >/dev/null 2>&1 || true
+done
 ok "escudo de seguridad agregado a la barra (clic = panel)"
 
 # atajo en el menu de aplicaciones

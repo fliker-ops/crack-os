@@ -20,6 +20,7 @@ sleep 6
 X() { docker exec crackos-prueba bash -c "$*"; }
 # barra de Crack OS para comprobar que se agrega el escudo
 docker cp config/includes.chroot/etc/skel/.config/waybar crackos-prueba:/home/crack/.config/waybar
+docker cp config/includes.chroot/etc/skel/.config/swaync crackos-prueba:/home/crack/.config/swaync
 X "chown -R crack: /home/crack/.config"
 
 echo "==================== INSTALADOR ===================="

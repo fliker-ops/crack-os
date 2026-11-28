@@ -4,10 +4,31 @@
 # de Crack Guard funcionando de verdad. Las capturas quedan en /capturas.
 set -u
 export DEBIAN_FRONTEND=noninteractive
-apt-get install -y -qq sway waybar sway-notification-center kitty grim dbus-user-session fonts-noto-color-emoji >/dev/null
+apt-get install -y -qq sway waybar sway-notification-center kitty foot grim dbus-user-session fonts-noto-color-emoji >/dev/null
 OUT=/capturas; mkdir -p $OUT; chmod 777 $OUT; U=/home/crack; UID_=$(id -u crack)
 mkdir -p $U/.config $U/.local/share/fonts /run/user/$UID_
-cp -r /repo/config/includes.chroot/etc/skel/.config/{swaync,kitty} $U/.config/
+cp -r /repo/config/includes.chroot/etc/skel/.config/kitty $U/.config/
+# kitty necesita OpenGL y este escritorio de prueba no tiene GPU: el panel se muestra en foot con los mismos colores
+mkdir -p $U/.config/foot
+cat > $U/.config/foot/foot.ini <<FT
+font=JetBrainsMono Nerd Font Mono:size=11
+pad=14x12
+[colors]
+alpha=0.88
+foreground=ece2e3
+background=0b0708
+regular0=1a1214
+regular1=ff2832
+regular2=59d98a
+regular3=ffb547
+regular4=ff6a5c
+regular5=d45aa6
+regular6=ff8f8f
+regular7=d9cdce
+bright0=4d3c3f
+bright1=ff5c63
+bright7=ffffff
+FT
 cp /repo/config/includes.chroot/usr/share/fonts/truetype/crackos/*.ttf $U/.local/share/fonts/
 cp /repo/config/includes.chroot/etc/skel/.bashrc $U/.bashrc 2>/dev/null
 # la barra ya trae el escudo (lo agrego el instalador); en sway se cambian los modulos propios de Hyprland
@@ -53,13 +74,13 @@ sleep 6; shot 04-puerta-trasera
 A swaync-client -C >/dev/null 2>&1; sleep 1
 
 # 4) panel de Crack Guard
-A swaymsg exec "kitty --class crackos-float -e crackguard panel" >/dev/null
+A swaymsg exec "foot -a crackos-float crackguard panel" >/dev/null
 sleep 6; shot 05-panel-crackguard
 A swaymsg '[app_id="crackos-float"] kill' >/dev/null; sleep 1
-A swaymsg exec "kitty --class crackos-float -e sh -c 'crackguard registro 14; crackguard cuarentena; sleep 600'" >/dev/null
+A swaymsg exec "foot -a crackos-float sh -c 'crackguard registro 14; crackguard cuarentena; sleep 600'" >/dev/null
 sleep 6; shot 06-registro-y-cuarentena
 A swaymsg '[app_id="crackos-float"] kill' >/dev/null; sleep 1
-A swaymsg exec "kitty --class crackos-float -e sh -c 'crackguard congelados; echo; sudo ufw status verbose | head -9; sleep 600'" >/dev/null
+A swaymsg exec "foot -a crackos-float sh -c 'crackguard congelados; echo; sudo ufw status verbose | head -9; sleep 600'" >/dev/null
 sleep 6; shot 07-congelados-y-firewall
 pkill -9 -f '/tmp/xmrig 600'; pkill -9 -f '203.0.113.9'
 ls -la $OUT
