@@ -315,6 +315,7 @@ class Guard:
         self.passwd_users = self.users()
         self.boot_done = False
         self.mounts, self.first_mounts = set(), True
+        self.recent_virus = {}
         signal.signal(signal.SIGHUP, self.reload)
         signal.signal(signal.SIGTERM, lambda *a: sys.exit(0))
 
@@ -658,6 +659,10 @@ class Guard:
             if not ev:
                 continue
             path, virus = ev.get("archivo", "?"), ev.get("virus", "?")
+            # el mismo archivo puede llegar dos veces (al crearlo y al abrirlo)
+            if time.time() - self.recent_virus.get(path, 0) < 15:
+                continue
+            self.recent_virus[path] = time.time()
             time.sleep(0.3)
             qid = ""
             if os.path.isfile(path):
@@ -742,7 +747,7 @@ class Guard:
 
     # ---------------------------------------------------------- estado para la barra y el panel
     def system_status(self):
-        if time.time() - self.status_t < 30 and self.status_cache:
+        if time.time() - self.status_t < 8 and self.status_cache:
             return self.status_cache
 
         def active(unit):

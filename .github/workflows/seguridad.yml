@@ -24,7 +24,7 @@ jobs:
       - name: Publicar capturas en la rama capturas-seguridad
         if: always()
         run: |
-          [ -d capturas-seguridad ] || exit 0
+          ls capturas-seguridad/*.png >/dev/null 2>&1 || { echo 'sin capturas'; exit 0; }
           sudo chown -R "$USER" capturas-seguridad
           git config user.name "crackos-ci"; git config user.email "crackos-ci@users.noreply.github.com"
           tmp=$(mktemp -d); cp -r capturas-seguridad "$tmp/"

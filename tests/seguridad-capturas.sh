@@ -5,7 +5,7 @@
 set -u
 export DEBIAN_FRONTEND=noninteractive
 apt-get install -y -qq sway waybar sway-notification-center kitty grim dbus-user-session fonts-noto-color-emoji >/dev/null
-OUT=/capturas; mkdir -p $OUT; U=/home/crack; UID_=$(id -u crack)
+OUT=/capturas; mkdir -p $OUT; chmod 777 $OUT; U=/home/crack; UID_=$(id -u crack)
 mkdir -p $U/.config $U/.local/share/fonts /run/user/$UID_
 cp -r /repo/config/includes.chroot/etc/skel/.config/{swaync,kitty} $U/.config/
 cp /repo/config/includes.chroot/usr/share/fonts/truetype/crackos/*.ttf $U/.local/share/fonts/
